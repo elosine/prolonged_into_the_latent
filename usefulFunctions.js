@@ -49,3 +49,33 @@ function shuffle(array) {
   }
   return array;
 }
+// FUNCTION: chooseWeighted -----------------------------------
+function chooseWeighted(items, chances) {
+  var sum = chances.reduce((acc, el) => acc + el, 0);
+  var acc = 0;
+  chances = chances.map(el => (acc = el + acc));
+  var rand = Math.random() * sum;
+  return items[chances.filter(el => el <= rand).length];
+}
+// FUNCTION: palindromeTimeContainers -----------------------------------
+function palindromeTimeContainers(dur, minval, maxval, pctmin, pctmax) {
+  var timeCont = [];
+  var currtime = 0;
+  var newdur = dur;
+  var newminval = minval;
+  while (newdur > (dur / 2)) {
+    var tc = newminval;
+    timeCont.push(currtime);
+    currtime = currtime + tc;
+    newdur = newdur - tc;
+    newminval = Math.min((newminval * (1 + rrand(pctmin, pctmax))), maxval);
+  }
+  while (newdur >= 0) {
+    var tc = newminval;
+    timeCont.push(currtime);
+    currtime = currtime + tc;
+    newdur = newdur - tc;
+    newminval = Math.max((newminval * (1 - rrand(pctmin, pctmax))), minval);
+  }
+  return timeCont;
+}
