@@ -93,27 +93,68 @@ for (var i = 1; i < sec1Tempi.length; i++) {
       tCurrTime = tCurrTime + secperbeat;
       thisTempoTimes.push(tCurrTime);
     }
-    tempTempoTimes.push(thisTempoTimes);
+    var tempArraySet = [];
+    tempArraySet.push(thisTempoTimes);
+    var emptyOrchArray = [];
+    tempArraySet.push(emptyOrchArray);
+    tempArraySet.unshift(sec1Tempi[i][1][j]);
+    tempTempoTimes.push(tempArraySet);
+
   }
   thisSectionTimes.push(tempTempoTimes);
   timeGrid.push(thisSectionTimes);
 }
+// console.log(timeGrid);
 //Orchestration
 //[0] = s; [1] = a; [2] = t; [3] = b;
-var maxNumOfPlayers = 16;
-var players = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
-//make long sequence of players
-var playerSequence = shuffle(players);
-for(var i=0;i<999;i++){
-  var tempscram = shuffle(players);
-  playerSequence = playerSequence.concat(tempscram);
-}
-//Orchestrate
-// for(var i=0;i<timeGrid.length;i++){
-//   var tempNumPlayers = rrandIntFloor(timeGrid[i][1].length, maxNumOfPlayers);
-//   var
-// }
 
+var maxNumOfPlayers = 16;
+var players = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+//make long sequence of players
+var playerSequence = [];
+for (var i = 0; i < 9999; i++) {
+  var tempscram = shuffle(players);
+  playerSequence.push(tempscram);
+}
+var playerSequenceIx = 0;
+//timeGrid Anatomy
+//[ timecode, [ [array of arrays of timecode for each beat of each tempo ], [orchestrationArray] ]
+//Orchestrate
+//Make a custom orchestration sequence
+//number of players for whole section
+//create 16 arrays of 0-15 with enough in each set to cover all necessary parts
+//random of 16 so no repeats per section
+//random of 16 then reorder by set length so all players are used
+//Each tempo has at least one singer
+var orchestratedTimeGrid = [];
+for (var i = 0; i < timeGrid.length; i++) {
+  var tempNumPlayers = rrandInt(timeGrid[i][1].length, maxNumOfPlayers);
+  var orchOrder = scrambleCount(timeGrid[i][1].length);
+  orchestratedTimeGrid.push(timeGrid[i]);
+  //make performers arrays
+  var tempoGridIx = 0;
+  var playerix = 0;
+  for (var j = 0; j < tempNumPlayers; j++) {
+    orchestratedTimeGrid[i][1][orchOrder[tempoGridIx]][2].push(playerSequence[playerSequenceIx][playerix]);
+    tempoGridIx = (tempoGridIx + 1) % orchOrder.length;
+    playerix++;
+  }
+  playerSequenceIx++;
+}
+console.log(orchestratedTimeGrid);
+
+// console.log(timeGrid);
+function scrambleCount(numtocount) {
+  var scrambledCt = [];
+  for (var i = 0; i < numtocount; i++) {
+    scrambledCt.push(i);
+  }
+  for (let i = scrambledCt.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [scrambledCt[i], scrambledCt[j]] = [scrambledCt[j], scrambledCt[i]];
+  }
+  return scrambledCt;
+}
 
 
 
