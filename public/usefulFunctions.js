@@ -172,3 +172,15 @@ function downloadStrToHD(strData, strFileName, strMimeType) {
   }, 333);
   return true;
 }
+
+function scrambleCount(numtocount) {
+  var scrambledCt = [];
+  for (var i = 0; i < numtocount; i++) {
+    scrambledCt.push(i);
+  }
+  for (let i = scrambledCt.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [scrambledCt[i], scrambledCt[j]] = [scrambledCt[j], scrambledCt[i]];
+  }
+  return scrambledCt;
+}
