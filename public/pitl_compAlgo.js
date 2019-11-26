@@ -161,7 +161,12 @@ for (var i = 0; i < timeGrid.length; i++) {
 
 
 console.log(timeGrid);
-
+/* NEXT
+New Array organize playerGrid by  player
+Generate pitch changes with the palindromeTimeContainers function
+Write algorithm to insert pitches for each beat per players
+Flag beats with pitch change
+*/
 
 
 
