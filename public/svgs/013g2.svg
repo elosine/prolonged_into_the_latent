@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" width="210.00mm" height="297.00mm" viewBox="0 0 119.5016 169.0094">
+<!-- Page: 1/1 -->
+<text transform="translate(5.6906, 2.8453)" font-family="Century Schoolbook L" font-size="2.2001" text-anchor="start" fill="currentColor">
+<tspan>
+ </tspan>
+</text>
+<line transform="translate(14.2264, 7.8973)" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="-0.0000" x2="8.7642" y2="-0.0000"/>
+<line transform="translate(14.2264, 6.8973)" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="-0.0000" x2="8.7642" y2="-0.0000"/>
+<line transform="translate(14.2264, 5.8973)" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="-0.0000" x2="8.7642" y2="-0.0000"/>
+<line transform="translate(14.2264, 4.8973)" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="-0.0000" x2="8.7642" y2="-0.0000"/>
+<line transform="translate(14.2264, 3.8973)" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.1000" stroke="currentColor" x1="0.0500" y1="-0.0000" x2="8.7642" y2="-0.0000"/>
+<path transform="translate(15.0264, 4.8973) scale(0.0040, -0.0040)" d="M557 -125c0 28 23 51 51 51s51 -23 51 -51s-23 -51 -51 -51s-51 23 -51 51zM557 125c0 28 23 51 51 51s51 -23 51 -51s-23 -51 -51 -51s-51 23 -51 51zM232 263c172 0 293 -88 293 -251c0 -263 -263 -414 -516 -521c-3 -3 -6 -4 -9 -4c-7 0 -13 6 -13 13c0 3 1 6 4 9
+c202 118 412 265 412 493c0 120 -63 235 -171 235c-74 0 -129 -54 -154 -126c11 5 22 8 34 8c55 0 100 -45 100 -100c0 -58 -44 -106 -100 -106c-60 0 -112 47 -112 106c0 133 102 244 232 244z" fill="currentColor"/>
+<a style="color:inherit;" xlink:href="textedit:///Users/jyang/Documents/github/pitlOS/lilypond/013g2.ly:11:2:3">
+<path transform="translate(20.0264, 7.8973) scale(0.0040, -0.0040)" d="M220 138c56 0 109 -29 109 -91c0 -72 -56 -121 -103 -149c-36 -21 -76 -36 -117 -36c-56 0 -109 29 -109 91c0 72 56 121 103 149c36 21 76 36 117 36z" fill="currentColor"/>
+</a>
+<text transform="translate(59.7508, 165.5950)" font-family="Century Schoolbook L" font-size="2.2001" text-anchor="start" fill="currentColor">
+<tspan/>
+</text>
+</svg>

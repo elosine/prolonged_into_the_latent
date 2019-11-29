@@ -14,8 +14,6 @@ var s3_4 = s2thru4 - section2dur;
 var section3dur = s3_4 * rrand(0.57, 0.63);
 //Section 3: Accel & Hocket what remains
 var section4dur = s3_4 - section3dur;
-console.log("s1: " + (section1dur / 60) + " - " + "s2: " + (section2dur / 60) +
-  " - " + "s3: " + (section3dur / 60) + " - " + "s4: " + (section4dur / 60) + " - " + "s5: " + (section5dur / 60));
 //Section 1 Tempo Changes
 var sec1TempoChanges = palindromeTimeContainers(section1dur, 2.4, 9, 0.03, 0.06);
 //For every tempo change how many simultaneous tempi
@@ -89,9 +87,11 @@ for (var i = 1; i < sec1Tempi.length; i++) {
     var durTil1stBeat = secperbeat * tempphase;
     tCurrTime = tCurrTime + durTil1stBeat;
     var thisTempoTimes = [tCurrTime];
-    while (tCurrTime < sec1Tempi[i][0]) {
-      tCurrTime = tCurrTime + secperbeat;
+    while (tCurrTime <= sec1Tempi[i][0]) {
+      // while (tCurrTime <= (sec1Tempi[i][0]-secperbeat)) {
       thisTempoTimes.push(tCurrTime);
+      tCurrTime = tCurrTime + secperbeat;
+      // thisTempoTimes.push(tCurrTime);
     }
     var tempArraySet = [];
     tempArraySet.push(thisTempoTimes);
@@ -104,16 +104,9 @@ for (var i = 1; i < sec1Tempi.length; i++) {
   thisSectionTimes.push(tempTempoTimes);
   timeGrid.push(thisSectionTimes);
 }
-// console.log(timeGrid);
 
 
-
-// Orchestration Redux
-//// Calculate how many players will be used for this section
-//// Generate 0-15 repeat until you have that number of players
-//// Scramble this array and this will be the orchestration order
-
-
+// Orchestration
 
 // Generate a large set of every player we will need for every section
 var maxNumOfPlayers = 16;
@@ -160,13 +153,58 @@ for (var i = 0; i < timeGrid.length; i++) {
 }
 
 
-console.log(timeGrid);
+/*
+timegrid:
+[0] Section Start timecode
+[1] Arrays of Timecode for Each Tempo
+    [0] ... One Array for Every Tempo
+        [0] [Tempo in BPM, Phase]
+        [1] [Array of Timecode for each beat]
+        [2] [Array of Players]
+[2] Number of Players
+*/
 /* NEXT
-New Array organize playerGrid by  player
+New Array organize playerGrid by player
 Generate pitch changes with the palindromeTimeContainers function
 Write algorithm to insert pitches for each beat per players
 Flag beats with pitch change
 */
+
+/*
+Player will be index Number
+Each Array of time codes as an entry in array
+*/
+//Search for Player number
+var timeCodeByPart = [
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  []
+];
+for (var i = 0; i < timeGrid.length; i++) {
+  for (var j = 0; j < timeGrid[i][1].length; j++) {
+    for (var k = 0; k < timeGrid[i][1][j][2].length; k++) {
+      timeCodeByPart[timeGrid[i][1][j][2][k]].push(timeGrid[i][1][j][1]);
+    }
+  }
+}
+
+
+
+
+
 
 
 
