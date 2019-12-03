@@ -184,3 +184,7 @@ function scrambleCount(numtocount) {
   }
   return scrambledCt;
 }
+// FUNCTION: rads ---------------------------------------------------- //
+function rads(deg) {
+  return (deg * Math.PI) / 180;
+}

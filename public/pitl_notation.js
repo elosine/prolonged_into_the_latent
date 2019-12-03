@@ -55,24 +55,24 @@ for (var i = 0; i < numTracks; i++) {
 var goFrets = []; //[goFret, goFretMatl]
 // NOTATION SVGS ////////////////////////////////////////
 var svgNS = "http://www.w3.org/2000/svg";
-var testpitch = document.createElementNS(svgNS, 'image');
-var testpitch2 = document.createElementNS(svgNS, 'image');
+var svgXlink = 'http://www.w3.org/1999/xlink';
+var pitchContainers = [];
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
   init();
   requestAnimationFrame(animationEngine);
 }
-document.addEventListener('keydown', function(event) {
-  if (event.code == 'KeyA') {
-    fbf()
-  }
-});
-
-function fbf() {
-  update(MSPERFRAME);
-  draw();
-}
+// FOR FRAME BY FRAME TESTS -------------------------------------------- //
+// document.addEventListener('keydown', function(event) {
+//   if (event.code == 'KeyA') {
+//     fbf()
+//   }
+// });
+// function fbf() {
+//   update(MSPERFRAME);
+//   draw();
+// }
 // FUNCTION: init ------------------------------------------------------ //
 function init() {
   eventMatrix = mkEventMatrix();
@@ -142,16 +142,48 @@ function createScene() {
     goFrets.push(tGoFretSet);
   }
   // SVG NOTATION ///////////////////////////////////////////////
-  testpitch.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/fs5.svg');
-  testpitch.setAttributeNS(null, 'width', 250);
-  testpitch.setAttributeNS(null, 'height', 250);
-  testpitch.setAttributeNS(null, 'visibility', 'visible');
-  document.getElementById("notationLSVG").appendChild(testpitch);
-  testpitch2.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/aqf5.svg');
-  testpitch2.setAttributeNS(null, 'width', 250);
-  testpitch2.setAttributeNS(null, 'height', 250);
-  testpitch2.setAttributeNS(null, 'visibility', 'visible');
-  document.getElementById("notationRSVG").appendChild(testpitch2);
+  //// SVG CONTAINERS ////
+  for (var i = 0; i < numTracks; i++) {
+    var tcont = document.getElementById("notationOuterDiv");
+    var tsvgCanvas = document.createElementNS(svgNS, "svg");
+    tsvgCanvas.setAttributeNS(null, "width", GOFRETWIDTH.toString());
+    tsvgCanvas.setAttributeNS(null, "height", "100");
+    tsvgCanvas.setAttributeNS(null, "id", "notationSVGcont" + i.toString());
+    var trMargin = 34;
+    var ttrgap = 20.3;
+    var txloc = (ttrgap * i) + trMargin;
+    tsvgCanvas.setAttributeNS(null, "transform", "translate(" + txloc.toString() + ", 0)");
+    tsvgCanvas.setAttributeNS(null, "class", "notationCanvas");
+    tsvgCanvas.style.backgroundColor = "white";
+    tcont.appendChild(tsvgCanvas);
+    pitchContainers.push(tsvgCanvas);
+  }
+// SVG NOTATION IMAGE
+  var tnot = document.createElementNS(svgNS, "image");
+  tnot.setAttributeNS(svgXlink, 'xlink:href', '/svgs/082gqf5.svg');
+  var tbb = pitchContainers[0].getBoundingClientRect();
+  var tcontW = tbb.width;
+  tnot.setAttributeNS(null, 'width', tcontW.toString());
+  var tcontH = tbb.height;
+  tnot.setAttributeNS(null, 'height', tcontH.toString());
+  tnot.setAttributeNS(null, 'visibility', 'visible');
+  var tyoffset = -tcontH/2;
+  // tnot.setAttributeNS(null, "transform", "translate(0," + tyoffset.toString() + ")");
+  // tnot.setAttributeNS(null, "transform", "translateY(-50%)");
+  document.getElementById(pitchContainers[0].id).appendChild(tnot);
+
+
+
+  // testpitch.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/fs5.svg');
+  // testpitch.setAttributeNS(null, 'width', 250);
+  // testpitch.setAttributeNS(null, 'height', 250);
+  // testpitch.setAttributeNS(null, 'visibility', 'visible');
+  // document.getElementById("notationLSVG").appendChild(testpitch);
+  // testpitch2.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/aqf5.svg');
+  // testpitch2.setAttributeNS(null, 'width', 250);
+  // testpitch2.setAttributeNS(null, 'height', 250);
+  // testpitch2.setAttributeNS(null, 'visibility', 'visible');
+  // document.getElementById("notationRSVG").appendChild(testpitch2);
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
@@ -190,26 +222,8 @@ function update(aMSPERFRAME) {
       }
       //When tf reaches goline, blink and remove
       if (framect == eventMatrix[i][j][2]) {
-        // [true, tempTempoFret, tGoFrm, tTime, tNumPxTilGo, tiGoPx];
-
-        // console.log("----------------");
-        // console.log("Track#: " + i);
-        // console.log("framect: " + framect);
-        // console.log("PieceClk: " + (pieceClock / 1000));
-        // console.log("PxClk: " + (pieceClock * PXPERMS));
-        // console.log("GoFrame: " + eventMatrix[i][j][2]);
-        // console.log("GoTime: " + eventMatrix[i][j][3]);
-        // console.log("NumPxTilGo: " + eventMatrix[i][j][4]);
-        // console.log("GoPx: " + eventMatrix[i][j][5]);
-        // console.log("posz: " + eventMatrix[i][j][1].position.z);
-        // console.log("GOFRETPOSZ: " + GOFRETPOSZ);
-
-
         goFretBlink[i] = framect + 9;
-        // console.log(goFretBlink);
-        //remove tf from scene
         scene.remove(scene.getObjectByName(eventMatrix[i][j][1].name));
-        // break;
       }
     }
   }
@@ -220,10 +234,6 @@ function draw() {
   // // GO FRET BLINK TIMER ///////////////////////////////////
   for (var i = 0; i < goFretBlink.length; i++) {
     if (framect <= goFretBlink[i]) {
-      // console.log("+++++++++++++++++++++");
-      // console.log("FrameCt: " + framect);
-      // console.log(goFretBlink);
-      // console.log("+++++++++++++++++++++");
       goFrets[i][0].material.color = clr_safetyOrange;
       goFrets[i][0].geometry = goFretBigGeom;
     } else {
@@ -232,50 +242,11 @@ function draw() {
     }
 
   }
-  // if (framect >= goFretTimerL) {
-  //   goFretL.material.color = clr_yellow;
-  //   goFretL.geometry = goFretGeom;
-  // } else {
-  //   goFretL.material.color = clr_safetyOrange;
-  //   goFretL.geometry = goFretBigGeom;
-  // }
-  // if (framect >= goFretTimerR) {
-  //   goFretR.material.color = clr_yellow;
-  //   goFretR.geometry = goFretGeom;
-  // } else {
-  //   goFretR.material.color = clr_safetyOrange;
-  //   goFretR.geometry = goFretBigGeom;
-  // }
-  // // EVENT BLINK TIMER ///////////////////////////////////
-  // if (framect >= eventGoTimerL) {
-  //   eventGoL.material.color = clr_neonGreen;
-  //   eventGoL.geometry = eventGoGeom;
-  // } else {
-  //   eventGoL.material.color = clr_red;
-  //   eventGoL.geometry = eventGoBigGeom;
-  // }
-  // if (framect >= eventGoTimerR) {
-  //   eventGoR.material.color = clr_neonGreen;
-  //   eventGoR.geometry = eventGoGeom;
-  // } else {
-  //   eventGoR.material.color = clr_red;
-  //   eventGoR.geometry = eventGoBigGeom;
-  // }
   // RENDER ///////////////////////////////////
   renderer.render(scene, camera);
 }
-// FUNCTION: rads ---------------------------------------------------- //
-function rads(deg) {
-  return (deg * Math.PI) / 180;
-}
 // FUNCTION: mkEventSection ------------------------------------------- //
-//find initial go pixel for each event
-//find goframe for each event
-
-
-//CHANGE THIS FUNCTION TO CREATE THE EVENT FRETS AS WELL
-//FLATTEN EVENTS INTO ONE Array/
-//EACH WITH  var newTempoFret = [true, tempTempoFret, tempGoFrame, COLOR(ALTERNATE WITH NEW TEMPO)];
+//FLATTEN EVENTS INTO ONE ARRAY PER PERFORMER
 function mkEventMatrix() {
   var tEventMatrix = [];
   var tempoFretIx = 0;
@@ -306,60 +277,3 @@ function mkEventMatrix() {
   }
   return tEventMatrix;
 }
-
-// FUNCTION: mkEventSection ------------------------------------------- //
-// function mkEventSection(startTime, numbeats, tempo, trnum, fretClr, eventSet) {
-//   var tempoFretSet = [];
-//   var numPxTilGo = startTime * PXPERSEC;
-//   var iGoPx = GOFRETPOSZ - numPxTilGo;
-//   var iGoFrame = numPxTilGo / PXPERFRAME;
-//   var pxPerBeat = PXPERSEC / (tempo / 60);
-//   // Make Tempo Frets ////////////////////////////////////
-//   for (var i = 0; i < numbeats; i++) {
-//     var tempStartPx = iGoPx - (pxPerBeat * i);
-//     var tempGoFrame = Math.round(iGoFrame + ((pxPerBeat / PXPERFRAME) * i));
-//     var tempMatl = new THREE.MeshLambertMaterial({
-//       color: fretClr
-//     });
-//     var tempTempoFret = new THREE.Mesh(tempoFretGeom, tempMatl);
-//     tempTempoFret.position.z = tempStartPx;
-//     tempTempoFret.position.y = TEMPOFRETHEIGHT;
-//     if (trnum == 0) {
-//       tempTempoFret.position.x = -TRDISTFROMCTR;
-//     } else {
-//       tempTempoFret.position.x = TRDISTFROMCTR;
-//     }
-//     tempTempoFret.name = "tempofret" + tempoFretIx;
-//     tempoFretIx++;
-//     var newTempoFret = [true, tempTempoFret, tempGoFrame];
-//     tempoFretSet.push(newTempoFret);
-//   }
-//   // Make Events /////////////////////////////////////////////
-//   var tempEventSet = [];
-//   for (var i = 0; i < eventSet.length; i++) {
-//     var tempEvent = new THREE.Mesh(eventGeom, eventMatl);
-//     var startpx, goframe;
-//     //Events can be scheduled by beat or seconds
-//     //Events Scheduled by beat
-//     if (eventSet[i][0] == 0) {
-//       startpx = iGoPx - (pxPerBeat * eventSet[i][1]);
-//       goframe = iGoFrame + Math.round((pxPerBeat / PXPERFRAME) * eventSet[i][1]);
-//     }
-//     //events Scheduled by seconds
-//     else if (eventSet[i][0] == 1) {
-//       startpx = iGoPx - (PXPERSEC * eventSet[i][1]);
-//       goframe = iGoFrame + Math.round(FRAMERATE * eventSet[i][1]);
-//     }
-//     tempEvent.position.z = startpx;
-//     tempEvent.position.y = EVENTGOHEIGHT;
-//     if (trnum == 0) {
-//       tempEvent.position.x = -TRDISTFROMCTR;
-//     } else {
-//       tempEvent.position.x = TRDISTFROMCTR;
-//     }
-//     tempEvent.name = "event" + i;
-//     var tempEventArray = [true, tempEvent, goframe];
-//     tempEventSet.push(tempEventArray);
-//   }
-//   return [tempoFretSet, tempEventSet];
-// }

@@ -200,6 +200,9 @@ for (var i = 0; i < timeGrid.length; i++) {
     }
   }
 }
+//MAKE PITCH DATA
+var pitchChangeTimes =  palindromeTimeContainers(PIECEDURSEC, 7, 21, 0.01, 0.17);
+console.log(pitchChangeTimes);
 
 
 
