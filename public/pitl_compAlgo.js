@@ -83,10 +83,10 @@ for (var i = 1; i < sec1Tempi.length; i++) {
     //find #sec/beat
     var temptempo = sec1Tempi[i][1][j][0];
     var tempphase = sec1Tempi[i][1][j][1];
-    var secperbeat = 60 / temptempo; //tempo, [1] is phase
+    var secperbeat = 60.0 / temptempo; //tempo, [1] is phase
     var durTil1stBeat = secperbeat * tempphase;
     tCurrTime = tCurrTime + durTil1stBeat;
-    var thisTempoTimes = [tCurrTime];
+    var thisTempoTimes = [];
     while (tCurrTime <= sec1Tempi[i][0]) {
       // while (tCurrTime <= (sec1Tempi[i][0]-secperbeat)) {
       thisTempoTimes.push(tCurrTime);
@@ -200,7 +200,6 @@ for (var i = 0; i < timeGrid.length; i++) {
     }
   }
 }
-
 
 
 

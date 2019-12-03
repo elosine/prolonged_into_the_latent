@@ -37,6 +37,9 @@ var GOFRETPOSZ = -GOFRETLENGTH / 2;
 var GOFRETWIDTH = 64;
 var timeCodeByPart_goPx_goFrm = [];
 var goFretGeom = new THREE.CubeGeometry(GOFRETWIDTH, GOFRETHEIGHT, GOFRETLENGTH);
+var goFretMatl = new THREE.MeshLambertMaterial({
+  color: clr_neonGreen
+});
 var goFretAdd = 3;
 var goFretBigGeom = new THREE.CubeGeometry(GOFRETWIDTH + goFretAdd, GOFRETHEIGHT + goFretAdd, GOFRETLENGTH + goFretAdd);
 var tempoFretGeom = new THREE.CubeGeometry(GOFRETWIDTH, GOFRETHEIGHT, GOFRETLENGTH);
@@ -45,6 +48,11 @@ var trackXoffset = 634;
 var trdiameter = 10;
 var spaceBtwnTracks = (trackXoffset * 2) / (numTracks - 1);
 var eventMatrix;
+var goFretBlink = [];
+for (var i = 0; i < numTracks; i++) {
+  goFretBlink.push(0);
+}
+var goFrets = []; //[goFret, goFretMatl]
 // NOTATION SVGS ////////////////////////////////////////
 var svgNS = "http://www.w3.org/2000/svg";
 var testpitch = document.createElementNS(svgNS, 'image');
@@ -54,6 +62,16 @@ function setup() {
   createScene();
   init();
   requestAnimationFrame(animationEngine);
+}
+document.addEventListener('keydown', function(event) {
+  if (event.code == 'KeyA') {
+    fbf()
+  }
+});
+
+function fbf() {
+  update(MSPERFRAME);
+  draw();
 }
 // FUNCTION: init ------------------------------------------------------ //
 function init() {
@@ -100,7 +118,6 @@ function createScene() {
   var trmatl = new THREE.MeshLambertMaterial({
     color: 0x708090
   });
-  var goFrets = []; //[goFret, goFretMatl]
   var trackXpos = [];
   for (var i = 0; i < numTracks; i++) {
     var tTr = new THREE.Mesh(trgeom, trmatl);
@@ -110,10 +127,10 @@ function createScene() {
     tTr.position.x = -trackXoffset + (spaceBtwnTracks * i);
     scene.add(tTr);
     var tGoFretSet = [];
-    var tGoFretMatl = new THREE.MeshLambertMaterial({
+    var goFretMatl = new THREE.MeshLambertMaterial({
       color: clr_neonGreen
     });
-    tGoFret = new THREE.Mesh(goFretGeom, tGoFretMatl);
+    tGoFret = new THREE.Mesh(goFretGeom, goFretMatl);
     tGoFret.position.z = GOFRETPOSZ;
     tGoFret.position.y = GOFRETHEIGHT;
     var tTrackXpos = -trackXoffset + (spaceBtwnTracks * i);
@@ -121,7 +138,7 @@ function createScene() {
     trackXpos.push(tTrackXpos);
     scene.add(tGoFret);
     tGoFretSet.push(tGoFret);
-    tGoFretSet.push(tGoFretMatl);
+    tGoFretSet.push(goFretMatl);
     goFrets.push(tGoFretSet);
   }
   // SVG NOTATION ///////////////////////////////////////////////
@@ -150,13 +167,14 @@ function animationEngine(timestamp) {
   requestAnimationFrame(animationEngine);
 }
 // UPDATE -------------------------------------------------------------- //
-function update(MSPERFRAME) {
+function update(aMSPERFRAME) {
   // CLOCK ///////////////////////////////////////////////
   framect++;
-  pieceClock += MSPERFRAME;
+  pieceClock += aMSPERFRAME;
   pieceClock = pieceClock - clockadj;
   // // EVENTS /////////////////////////////////////////////////////
   //FOLLOW BELOW TO MAKE EVENT FRETS
+  if (test) test = false;
   for (var i = 0; i < eventMatrix.length; i++) {
     for (var j = 0; j < eventMatrix[i].length; j++) {
       //add the tf to the scene if it is on the runway
@@ -172,40 +190,48 @@ function update(MSPERFRAME) {
       }
       //When tf reaches goline, blink and remove
       if (framect == eventMatrix[i][j][2]) {
-        // goFretTimerL = framect + 15;
-        //remove tf from scene and array
+        // [true, tempTempoFret, tGoFrm, tTime, tNumPxTilGo, tiGoPx];
+
+        // console.log("----------------");
+        // console.log("Track#: " + i);
+        // console.log("framect: " + framect);
+        // console.log("PieceClk: " + (pieceClock / 1000));
+        // console.log("PxClk: " + (pieceClock * PXPERMS));
+        // console.log("GoFrame: " + eventMatrix[i][j][2]);
+        // console.log("GoTime: " + eventMatrix[i][j][3]);
+        // console.log("NumPxTilGo: " + eventMatrix[i][j][4]);
+        // console.log("GoPx: " + eventMatrix[i][j][5]);
+        // console.log("posz: " + eventMatrix[i][j][1].position.z);
+        // console.log("GOFRETPOSZ: " + GOFRETPOSZ);
+
+
+        goFretBlink[i] = framect + 9;
+        // console.log(goFretBlink);
+        //remove tf from scene
         scene.remove(scene.getObjectByName(eventMatrix[i][j][1].name));
-        // eventSectionL[0].splice(i, 1); //fix this
+        // break;
       }
     }
   }
 }
-
-// //// TEMPO FRETS LEFT  ////////////////////////////////////
-// for (var i = 0; i < eventSectionL[0].length; i++) {
-//   //add the tf to the scene if it is on the runway
-//   if (eventSectionL[0][i][1].position.z > (-RUNWAYLENGTH)) {
-//     if (eventSectionL[0][i][0]) {
-//       eventSectionL[0][i][0] = false;
-//       scene.add(eventSectionL[0][i][1]);
-//     }
-//   }
-//   //advance tf if it is not past gofret
-//   if (eventSectionL[0][i][1].position.z < GOFRETPOSZ) {
-//     eventSectionL[0][i][1].position.z += PXPERFRAME;
-//   }
-//   //When tf reaches goline, blink and remove
-//   if (framect == eventSectionL[0][i][2]) {
-//     goFretTimerL = framect + 15;
-//     //remove tf from scene and array
-//     scene.remove(scene.getObjectByName(eventSectionL[0][i][1].name));
-//     eventSectionL[0].splice(i, 1); //fix this
-//   }
-// }
-
-// DRAW ---------------------------------------------------------------- //
+var test = true;
+// DRAW ----------------------------------------------------------------- //
 function draw() {
   // // GO FRET BLINK TIMER ///////////////////////////////////
+  for (var i = 0; i < goFretBlink.length; i++) {
+    if (framect <= goFretBlink[i]) {
+      // console.log("+++++++++++++++++++++");
+      // console.log("FrameCt: " + framect);
+      // console.log(goFretBlink);
+      // console.log("+++++++++++++++++++++");
+      goFrets[i][0].material.color = clr_safetyOrange;
+      goFrets[i][0].geometry = goFretBigGeom;
+    } else {
+      goFrets[i][0].material.color = clr_neonGreen;
+      goFrets[i][0].geometry = goFretGeom;
+    }
+
+  }
   // if (framect >= goFretTimerL) {
   //   goFretL.material.color = clr_yellow;
   //   goFretL.geometry = goFretGeom;
@@ -262,6 +288,7 @@ function mkEventMatrix() {
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
+        // var tGoFrm = Math.round(tTime * FRAMERATE);
         var tempMatl = new THREE.MeshLambertMaterial({
           color: fretClr[j % 2]
         });
@@ -271,7 +298,7 @@ function mkEventMatrix() {
         tempTempoFret.position.x = -trackXoffset + (spaceBtwnTracks * i);
         tempTempoFret.name = "tempofret" + tempoFretIx;
         tempoFretIx++;
-        var newTempoFret = [true, tempTempoFret, tGoFrm];
+        var newTempoFret = [true, tempTempoFret, tGoFrm, tTime, tNumPxTilGo, tiGoPx]; //[gate so tempofret is added to scene only once, mesh, goFrame]
         tTempoFretSet.push(newTempoFret);
       }
     }
