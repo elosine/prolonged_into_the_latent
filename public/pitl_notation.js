@@ -57,11 +57,13 @@ var goFrets = []; //[goFret, goFretMatl]
 var svgNS = "http://www.w3.org/2000/svg";
 var svgXlink = 'http://www.w3.org/1999/xlink';
 var pitchContainers = [];
+// MISC ////////////////////////////////////////
+var played = false;
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
+  eventMatrix = mkEventMatrix();
   init();
-  requestAnimationFrame(animationEngine);
 }
 // FOR FRAME BY FRAME TESTS -------------------------------------------- //
 // document.addEventListener('keydown', function(event) {
@@ -75,7 +77,40 @@ function setup() {
 // }
 // FUNCTION: init ------------------------------------------------------ //
 function init() {
-  eventMatrix = mkEventMatrix();
+  activateStartBtn();
+}
+//FUNCTION mkStartBtn ------------------------------------------------- //
+function activateStartBtn() {
+  var startButton = document.getElementById("startButton");
+  startButton.addEventListener("click", startPiece);
+}
+//FUNCTION play ------------------------------------------------------ //
+function startPiece() {
+  if (!played) {
+    played = true;
+    startButton.parentNode.removeChild(startButton);
+    loadInitialNotation();
+    // initAudio();
+    requestAnimationFrame(animationEngine);
+  }
+}
+//FUNCTION loadInitialNotation ------------------------------------------------------ //
+function loadInitialNotation() {
+//[] - [ time, frame, [ partsArrays ] ] - [ [b],[t],[a][s] ] - [ [b/t/a/s-1],[b/t/a/s-2],[b/t/a/s-3], [b/t/a/s-4] ] - [hz, midi, relAmp]
+  console.log(pitchChanges[0][2][0][0][1]);
+  // CREATE SVG ELEMENT FOR ALL Pitches
+  // APPEND CHILD FOR INITAL PITCHES
+  // SVG NOTATION IMAGE
+  // var tnot = document.createElementNS(svgNS, "image");
+  // tnot.setAttributeNS(svgXlink, 'xlink:href', '/svgs/082gqf5.svg');
+  // var tbb = pitchContainers[0].getBoundingClientRect();
+  // var tcontW = tbb.width;
+  // tnot.setAttributeNS(null, 'width', tcontW.toString());
+  // var tcontH = tbb.height;
+  // tnot.setAttributeNS(null, 'height', tcontH.toString());
+  // tnot.setAttributeNS(null, 'visibility', 'visible');
+  // var tyoffset = -tcontH / 2;
+  // document.getElementById(pitchContainers[0].id).appendChild(tnot);
 }
 // FUNCTION: createScene ---------------------------------------------- //
 function createScene() {
@@ -158,7 +193,7 @@ function createScene() {
     tcont.appendChild(tsvgCanvas);
     pitchContainers.push(tsvgCanvas);
   }
-// SVG NOTATION IMAGE
+  // SVG NOTATION IMAGE
   var tnot = document.createElementNS(svgNS, "image");
   tnot.setAttributeNS(svgXlink, 'xlink:href', '/svgs/082gqf5.svg');
   var tbb = pitchContainers[0].getBoundingClientRect();
@@ -167,23 +202,8 @@ function createScene() {
   var tcontH = tbb.height;
   tnot.setAttributeNS(null, 'height', tcontH.toString());
   tnot.setAttributeNS(null, 'visibility', 'visible');
-  var tyoffset = -tcontH/2;
-  // tnot.setAttributeNS(null, "transform", "translate(0," + tyoffset.toString() + ")");
-  // tnot.setAttributeNS(null, "transform", "translateY(-50%)");
+  var tyoffset = -tcontH / 2;
   document.getElementById(pitchContainers[0].id).appendChild(tnot);
-
-
-
-  // testpitch.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/fs5.svg');
-  // testpitch.setAttributeNS(null, 'width', 250);
-  // testpitch.setAttributeNS(null, 'height', 250);
-  // testpitch.setAttributeNS(null, 'visibility', 'visible');
-  // document.getElementById("notationLSVG").appendChild(testpitch);
-  // testpitch2.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '/svgs/aqf5.svg');
-  // testpitch2.setAttributeNS(null, 'width', 250);
-  // testpitch2.setAttributeNS(null, 'height', 250);
-  // testpitch2.setAttributeNS(null, 'visibility', 'visible');
-  // document.getElementById("notationRSVG").appendChild(testpitch2);
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
@@ -205,8 +225,6 @@ function update(aMSPERFRAME) {
   pieceClock += aMSPERFRAME;
   pieceClock = pieceClock - clockadj;
   // // EVENTS /////////////////////////////////////////////////////
-  //FOLLOW BELOW TO MAKE EVENT FRETS
-  if (test) test = false;
   for (var i = 0; i < eventMatrix.length; i++) {
     for (var j = 0; j < eventMatrix[i].length; j++) {
       //add the tf to the scene if it is on the runway
@@ -227,8 +245,13 @@ function update(aMSPERFRAME) {
       }
     }
   }
+  // NOTATION //////////////////
+  for(var i=1;i<pitchChanges.length;i++){
+    if(pitchChanges[i][1] == framect){
+      console.log(i + " " + pitchChanges[i][0] + " " + pitchChanges[i][1] + " " + pitchChanges[i][2][0][0]);
+    }
+  }
 }
-var test = true;
 // DRAW ----------------------------------------------------------------- //
 function draw() {
   // // GO FRET BLINK TIMER ///////////////////////////////////
@@ -256,6 +279,7 @@ function mkEventMatrix() {
       for (var k = 0; k < timeCodeByPart[i][j].length; k++) {
         var tTimeGopxGoFrm = [];
         var tTime = timeCodeByPart[i][j][k];
+        tTime = tTime + leadTime;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);

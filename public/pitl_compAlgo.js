@@ -1,3 +1,5 @@
+var leadTime = 8.0;
+
 //ca 10.6 - 13.2 min
 var PIECEDURSEC = rrand(10.6, 13.2) * 60;
 // 5 Sections: Hocket - Crescendos - Hocket/Crescendos/Accel - Hocket/Accel - Short Hocket :13-:27
@@ -201,8 +203,59 @@ for (var i = 0; i < timeGrid.length; i++) {
   }
 }
 //MAKE PITCH DATA
-var pitchChangeTimes =  palindromeTimeContainers(PIECEDURSEC, 7, 21, 0.01, 0.17);
-console.log(pitchChangeTimes);
+var pitchChangeTimes = palindromeTimeContainers(PIECEDURSEC, 7, 21, 0.01, 0.17);
+//Fetch Pitches From Fullman Analysis
+var pitchChanges = [];
+fetch('/pitchdata/sfAnalysis001.txt')
+  .then(response => response.text())
+  .then(text => {
+    var pitchesArray1 = [];
+    var pitchesArray2;
+    var t1 = text.split(":");
+    for (var i = 0; i < t1.length; i++) {
+      var temparr = t1[i].split(';');
+      var t3 = [];
+      for (var j = 0; j < temparr.length; j++) {
+        var temparr2 = temparr[j].split("&");
+        var t4 = [];
+        for (var k = 0; k < temparr2.length; k++) {
+          t4.push(temparr2[k].split(","));
+        }
+        t3.push(t4);
+      }
+      pitchesArray1.push(t3);
+    }
+    //slice off first 10 entries because they do not have full pitches for all parts
+    pitchesArray2 = pitchesArray1.slice(10, pitchesArray1.length);
+    return pitchesArray2;
+  })
+  .then(valArr => {
+    // pitchesArray is index for each second
+    // 4 arrays for every section: bass, tenor, alto, soprano
+    // Each section array contains up to 4 pitches for each of 4 singers
+    // [hz, midi, relative Amp]
+    var pitchesArrayMaxTime = valArr.length - 1;
+    var pitchChangeTimesMaxTime = pitchChangeTimes[pitchChangeTimes.length - 1];
+    for (var i = 0; i < pitchChangeTimes.length; i++) {
+      var ttimepartsarr = [];
+      var ttimecode;
+      if (i != 0) {
+        ttimecode = leadTime + pitchChangeTimes[i];
+      } else ttimecode = 0.0;
+      ttimepartsarr.push(ttimecode);
+      ttimepartsarr.push(Math.round(ttimecode * FRAMERATE));
+      var tScaledTime = scale(pitchChangeTimes[i], 0.0, pitchChangeTimesMaxTime, 0.0, pitchesArrayMaxTime);
+      for (var j = 0; j < valArr.length; j++) {
+        if (tScaledTime < j) {
+          ttimepartsarr.push(valArr[j - 1]);
+          pitchChanges.push(ttimepartsarr);
+          break;
+        }
+      }
+    }
+  });
+  //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
+
 
 
 
