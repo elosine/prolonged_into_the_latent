@@ -57,9 +57,11 @@ var goFrets = []; //[goFret, goFretMatl]
 var svgNS = "http://www.w3.org/2000/svg";
 var svgXlink = 'http://www.w3.org/1999/xlink';
 var pitchContainers = [];
+var pitchContainerDOMs = [];
 var notes;
 // MISC ////////////////////////////////////////
 var played = false;
+var currentNotation = [];
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
@@ -116,23 +118,27 @@ function loadInitialNotation() {
   }
   // DRAW INITIAL PITCHES FOR EACH TRACKS
   for (var i = 0; i < 4; i++) {
-    console.log(i + " " + roundByStep(pitchChanges[0][2][0][i][1], 0.5));
-    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[0][roundByStep(pitchChanges[0][2][0][i][1], 0.5)]);
+    var timg = notesForEachPart[0][roundByStep(pitchChanges[0][2][0][i][1], 0.5)];
+    pitchContainerDOMs[i].appendChild(timg);
+    currentNotation.push(timg);
   }
   for (var i = 4; i < 8; i++) {
     var j = i - 4;
-    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][1][j][1], 0.5));
-    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[1][ roundByStep( pitchChanges[0][2][1][j][1], 0.5 )  ] );
+    var timg = notesForEachPart[1][roundByStep(pitchChanges[0][2][1][j][1], 0.5)];
+    pitchContainerDOMs[i].appendChild(timg);
+    currentNotation.push(timg);
   }
   for (var i = 8; i < 12; i++) {
     var j = i - 8;
-    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][2][j][1], 0.5));
-    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[2][ roundByStep( pitchChanges[0][2][2][j][1], 0.5 )  ] );
+    var timg = notesForEachPart[2][roundByStep(pitchChanges[0][2][2][j][1], 0.5)];
+    pitchContainerDOMs[i].appendChild(timg);
+    currentNotation.push(timg);
   }
   for (var i = 12; i < 16; i++) {
     var j = i - 12;
-    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][3][j][1], 0.5));
-    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[3][ roundByStep( pitchChanges[0][2][3][j][1], 0.5 )  ] );
+    var timg = notesForEachPart[3][roundByStep(pitchChanges[0][2][3][j][1], 0.5)];
+    pitchContainerDOMs[i].appendChild(timg);
+    currentNotation.push(timg);
   }
   return notesForEachPart;
 }
@@ -217,6 +223,9 @@ function createScene() {
     tcont.appendChild(tsvgCanvas);
     pitchContainers.push(tsvgCanvas);
   }
+  for (var i = 0; i < pitchContainers.length; i++) {
+    pitchContainerDOMs.push(document.getElementById(pitchContainers[i].id));
+  }
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
@@ -259,11 +268,65 @@ function update(aMSPERFRAME) {
     }
   }
   // NOTATION //////////////////
+  //REMOVE PREVIOUS NOTATION
   for (var i = 1; i < pitchChanges.length; i++) {
     if (pitchChanges[i][1] == framect) {
-      // console.log(i + " " + pitchChanges[i][0] + " " + pitchChanges[i][1] + " " + pitchChanges[i][2][0][0]);
+      for (var k = 0; k < 4; k++) {
+        var timg = notes[0][roundByStep(pitchChanges[i][2][0][k][1], 0.5)];
+        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+      }
+      for (var k = 4; k < 8; k++) {
+        var j = k - 4;
+        var timg = notes[1][roundByStep(pitchChanges[i][2][1][j][1], 0.5)];
+        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+      }
+      for (var k = 8; k < 12; k++) {
+        var j = k - 8;
+        var timg = notes[2][roundByStep(pitchChanges[i][2][2][j][1], 0.5)];
+        var tnotCont = document.getElementById(pitchContainers[k].id);
+        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+      }
+      for (var k = 12; k < 16; k++) {
+        var j = k - 12;
+        var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
+        var tnotCont = document.getElementById(pitchContainers[k].id);
+        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+      }
+      break;
     }
   }
+  //ADD NEW NOTATION
+  for (var i = 1; i < pitchChanges.length; i++) {
+    if (pitchChanges[i][1] == framect) {
+      console.log("----------");
+      console.log("----------");
+      for (var k = 0; k < 4; k++) {
+        console.log(roundByStep(pitchChanges[i][2][0][k][1], 0.5));
+        var timg = notes[0][roundByStep(pitchChanges[i][2][0][k][1], 0.5)];
+        pitchContainerDOMs[k].appendChild(timg);
+      }
+      for (var k = 4; k < 8; k++) {
+        var j = k - 4;
+        console.log(roundByStep(pitchChanges[i][2][1][j][1], 0.5));
+        var timg = notes[1][roundByStep(pitchChanges[i][2][1][j][1], 0.5)];
+        pitchContainerDOMs[k].appendChild(timg);
+      }
+      for (var k = 8; k < 12; k++) {
+        var j = k - 8;
+        console.log(roundByStep(pitchChanges[i][2][2][j][1], 0.5));
+        var timg = notes[2][roundByStep(pitchChanges[i][2][2][j][1], 0.5)];
+        pitchContainerDOMs[k].appendChild(timg);
+      }
+      for (var k = 12; k < 16; k++) {
+        var j = k - 12;
+        console.log(roundByStep(pitchChanges[i][2][3][j][1], 0.5));
+        var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
+        pitchContainerDOMs[k].appendChild(timg);
+      }
+      break;
+    }
+  }
+
 }
 // DRAW ----------------------------------------------------------------- //
 function draw() {
@@ -276,7 +339,6 @@ function draw() {
       goFrets[i][0].material.color = clr_neonGreen;
       goFrets[i][0].geometry = goFretGeom;
     }
-
   }
   // RENDER ///////////////////////////////////
   renderer.render(scene, camera);

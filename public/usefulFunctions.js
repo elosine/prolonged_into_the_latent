@@ -193,3 +193,8 @@ function roundByStep(value, step) {
     var inv = 1.0 / step;
     return Math.round(value * inv) / inv;
 }
+function floorByStep(value, step) {
+    step || (step = 1.0);
+    var inv = 1.0 / step;
+    return Math.floor(value * inv) / inv;
+}

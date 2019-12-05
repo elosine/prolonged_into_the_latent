@@ -206,7 +206,7 @@ for (var i = 0; i < timeGrid.length; i++) {
 var pitchChangeTimes = palindromeTimeContainers(PIECEDURSEC, 7, 21, 0.01, 0.17);
 //Fetch Pitches From Fullman Analysis
 var pitchChanges = [];
-fetch('/pitchdata/sfAnalysis001.txt')
+fetch('/pitchdata/sfAalysis003.txt')
   .then(response => response.text())
   .then(text => {
     var pitchesArray1 = [];
@@ -225,16 +225,45 @@ fetch('/pitchdata/sfAnalysis001.txt')
       }
       pitchesArray1.push(t3);
     }
-    //slice off first 10 entries because they do not have full pitches for all parts
-    pitchesArray2 = pitchesArray1.slice(10, pitchesArray1.length);
-    return pitchesArray2;
+    return pitchesArray1;
   })
   .then(valArr => {
+    //All parts need to have 4 pitches per section
+    //this will remove the ones that do not have full sections
+    var ttoosmall = [];
+    var tnewPitchesArray = [];
+    for (var i = 0; i < valArr.length; i++) {
+      for (var j = 0; j < valArr[i].length; j++) {
+        if (valArr[i][j].length < 4) {
+          ttoosmall.push(i);
+        }
+      }
+    }
+    for (var i = 0; i < valArr.length; i++) {
+      var tallGood = true;
+      for (var j = 0; j < ttoosmall.length; j++) {
+        if (i == ttoosmall[j]) {
+          tallGood = false;
+          break;
+        }
+      }
+      if (tallGood) tnewPitchesArray.push(valArr[i]);
+    }
+    // SHUFFLE UP PITCHES
+    var ts = [];
+    for(var i=0;i<tnewPitchesArray.length;i++){
+      ts.push(i);
+    }
+    var tss = shuffle(ts);
+    var tnewPitchesArray2 = [];
+    for(var i=0;i<tnewPitchesArray.length;i++){
+      tnewPitchesArray2.push( tnewPitchesArray[ tss[i] ] );
+    }
     // pitchesArray is index for each second
     // 4 arrays for every section: bass, tenor, alto, soprano
     // Each section array contains up to 4 pitches for each of 4 singers
     // [hz, midi, relative Amp]
-    var pitchesArrayMaxTime = valArr.length - 1;
+    var pitchesArrayMaxTime = tnewPitchesArray2.length - 1;
     var pitchChangeTimesMaxTime = pitchChangeTimes[pitchChangeTimes.length - 1];
     for (var i = 0; i < pitchChangeTimes.length; i++) {
       var ttimepartsarr = [];
@@ -245,14 +274,15 @@ fetch('/pitchdata/sfAnalysis001.txt')
       ttimepartsarr.push(ttimecode);
       ttimepartsarr.push(Math.round(ttimecode * FRAMERATE));
       var tScaledTime = scale(pitchChangeTimes[i], 0.0, pitchChangeTimesMaxTime, 0.0, pitchesArrayMaxTime);
-      for (var j = 0; j < valArr.length; j++) {
+      for (var j = 0; j < tnewPitchesArray2.length; j++) {
         if (tScaledTime < j) {
-          ttimepartsarr.push(valArr[j - 1]);
+          ttimepartsarr.push(tnewPitchesArray2[j - 1]);
           pitchChanges.push(ttimepartsarr);
           break;
         }
       }
     }
+
   });
 //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
 var notesMidiDict = {
@@ -348,8 +378,7 @@ var notesMidiDict = {
   80.5: '/svgs/080p5aqf5.svg',
   81.0: '/svgs/081a5.svg'
 }
-for (const [key, value] of Object.entries(notesMidiDict)) {
-}
+for (const [key, value] of Object.entries(notesMidiDict)) {}
 
 
 

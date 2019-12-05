@@ -11,7 +11,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 //Loop to get frequency data every second
-var sfDur = 20;
+var sfDur = 444;
 var go = false;
 var downloadgate = true;
 var pitchset = [];
@@ -34,7 +34,7 @@ window.setInterval(() => {
 function downloadstringtofile() {
   if (downloadgate) {
     var tempstrarr = array3dtoString(pitchset);
-    downloadStrToHD(tempstrarr, 'sfAalysis002.txt', 'text/plain');
+    downloadStrToHD(tempstrarr, 'sfAalysis003.txt', 'text/plain');
     downloadgate = false;
   }
 }
@@ -58,10 +58,10 @@ function getFreqData() {
     var freqMidiAmps_sorted = freqMidiAmps.sort(sortFunction2DArray);
     var parts = [];
     var ranges = [
-      [36, 64],
-      [48, 69],
+      [40, 60],
+      [48, 67],
       [53, 74],
-      [60, 84]
+      [60, 81]
     ];
     //sort into parts, if analyzed pitches do not fit into range
     //find closest 8ve
