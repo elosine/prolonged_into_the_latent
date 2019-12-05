@@ -57,6 +57,7 @@ var goFrets = []; //[goFret, goFretMatl]
 var svgNS = "http://www.w3.org/2000/svg";
 var svgXlink = 'http://www.w3.org/1999/xlink';
 var pitchContainers = [];
+var notes;
 // MISC ////////////////////////////////////////
 var played = false;
 // SET UP -------------------------------------------------------------- //
@@ -89,28 +90,51 @@ function startPiece() {
   if (!played) {
     played = true;
     startButton.parentNode.removeChild(startButton);
-    loadInitialNotation();
+    notes = loadInitialNotation();
     // initAudio();
     requestAnimationFrame(animationEngine);
   }
 }
 //FUNCTION loadInitialNotation ------------------------------------------------------ //
 function loadInitialNotation() {
-//[] - [ time, frame, [ partsArrays ] ] - [ [b],[t],[a][s] ] - [ [b/t/a/s-1],[b/t/a/s-2],[b/t/a/s-3], [b/t/a/s-4] ] - [hz, midi, relAmp]
-  console.log(pitchChanges[0][2][0][0][1]);
-  // CREATE SVG ELEMENT FOR ALL Pitches
-  // APPEND CHILD FOR INITAL PITCHES
-  // SVG NOTATION IMAGE
-  // var tnot = document.createElementNS(svgNS, "image");
-  // tnot.setAttributeNS(svgXlink, 'xlink:href', '/svgs/082gqf5.svg');
-  // var tbb = pitchContainers[0].getBoundingClientRect();
-  // var tcontW = tbb.width;
-  // tnot.setAttributeNS(null, 'width', tcontW.toString());
-  // var tcontH = tbb.height;
-  // tnot.setAttributeNS(null, 'height', tcontH.toString());
-  // tnot.setAttributeNS(null, 'visibility', 'visible');
-  // var tyoffset = -tcontH / 2;
-  // document.getElementById(pitchContainers[0].id).appendChild(tnot);
+  var notesForEachPart = [];
+  // pitchChanges = [] - [ time, frame, [ partsArrays ] ] - [ [b],[t],[a][s] ] - [ [b/t/a/s-1],[b/t/a/s-2],[b/t/a/s-3], [b/t/a/s-4] ] - [hz, midi, relAmp]
+  for (var i = 0; i < 4; i++) {
+    var notesDict = {};
+    for (const [key, value] of Object.entries(notesMidiDict)) {
+      var tnote = document.createElementNS(svgNS, "image");
+      tnote.setAttributeNS(svgXlink, 'xlink:href', value);
+      var tbb = pitchContainers[0].getBoundingClientRect();
+      var tcontW = tbb.width;
+      tnote.setAttributeNS(null, 'width', tcontW.toString());
+      var tcontH = tbb.height;
+      tnote.setAttributeNS(null, 'height', tcontH.toString());
+      tnote.setAttributeNS(null, 'visibility', 'visible');
+      notesDict[key] = tnote;
+    }
+    notesForEachPart.push(notesDict);
+  }
+  // DRAW INITIAL PITCHES FOR EACH TRACKS
+  for (var i = 0; i < 4; i++) {
+    console.log(i + " " + roundByStep(pitchChanges[0][2][0][i][1], 0.5));
+    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[0][roundByStep(pitchChanges[0][2][0][i][1], 0.5)]);
+  }
+  for (var i = 4; i < 8; i++) {
+    var j = i - 4;
+    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][1][j][1], 0.5));
+    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[1][ roundByStep( pitchChanges[0][2][1][j][1], 0.5 )  ] );
+  }
+  for (var i = 8; i < 12; i++) {
+    var j = i - 8;
+    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][2][j][1], 0.5));
+    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[2][ roundByStep( pitchChanges[0][2][2][j][1], 0.5 )  ] );
+  }
+  for (var i = 12; i < 16; i++) {
+    var j = i - 12;
+    console.log(i + " " + j + " " + roundByStep(pitchChanges[0][2][3][j][1], 0.5));
+    document.getElementById(pitchContainers[i].id).appendChild(notesForEachPart[3][ roundByStep( pitchChanges[0][2][3][j][1], 0.5 )  ] );
+  }
+  return notesForEachPart;
 }
 // FUNCTION: createScene ---------------------------------------------- //
 function createScene() {
@@ -193,17 +217,6 @@ function createScene() {
     tcont.appendChild(tsvgCanvas);
     pitchContainers.push(tsvgCanvas);
   }
-  // SVG NOTATION IMAGE
-  var tnot = document.createElementNS(svgNS, "image");
-  tnot.setAttributeNS(svgXlink, 'xlink:href', '/svgs/082gqf5.svg');
-  var tbb = pitchContainers[0].getBoundingClientRect();
-  var tcontW = tbb.width;
-  tnot.setAttributeNS(null, 'width', tcontW.toString());
-  var tcontH = tbb.height;
-  tnot.setAttributeNS(null, 'height', tcontH.toString());
-  tnot.setAttributeNS(null, 'visibility', 'visible');
-  var tyoffset = -tcontH / 2;
-  document.getElementById(pitchContainers[0].id).appendChild(tnot);
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
@@ -246,9 +259,9 @@ function update(aMSPERFRAME) {
     }
   }
   // NOTATION //////////////////
-  for(var i=1;i<pitchChanges.length;i++){
-    if(pitchChanges[i][1] == framect){
-      console.log(i + " " + pitchChanges[i][0] + " " + pitchChanges[i][1] + " " + pitchChanges[i][2][0][0]);
+  for (var i = 1; i < pitchChanges.length; i++) {
+    if (pitchChanges[i][1] == framect) {
+      // console.log(i + " " + pitchChanges[i][0] + " " + pitchChanges[i][1] + " " + pitchChanges[i][2][0][0]);
     }
   }
 }
