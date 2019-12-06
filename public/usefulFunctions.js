@@ -188,13 +188,27 @@ function scrambleCount(numtocount) {
 function rads(deg) {
   return (deg * Math.PI) / 180;
 }
+
 function roundByStep(value, step) {
-    step || (step = 1.0);
-    var inv = 1.0 / step;
-    return Math.round(value * inv) / inv;
+  step || (step = 1.0);
+  var inv = 1.0 / step;
+  return Math.round(value * inv) / inv;
 }
+
 function floorByStep(value, step) {
-    step || (step = 1.0);
-    var inv = 1.0 / step;
-    return Math.floor(value * inv) / inv;
+  step || (step = 1.0);
+  var inv = 1.0 / step;
+  return Math.floor(value * inv) / inv;
+}
+
+function midiToSpeed(ogmidi, destmidi) {
+  var tspeed = Math.pow( 2, (destmidi - ogmidi) * (1.0 / 12.0) );
+  return tspeed;
+}
+
+function limitRange(num, min, max) {
+  var tnewval;
+  tnewval = Math.min(num, max);
+  tnewval = Math.max(tnewval, min);
+  return tnewval;
 }

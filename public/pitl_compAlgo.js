@@ -282,7 +282,6 @@ fetch('/pitchdata/sfAalysis003.txt')
         }
       }
     }
-
   });
 //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
 var notesMidiDict = {

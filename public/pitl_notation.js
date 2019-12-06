@@ -61,7 +61,7 @@ var pitchContainerDOMs = [];
 var notes;
 // MISC ////////////////////////////////////////
 var played = false;
-var currentNotation = [];
+var currentPitches = [];
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
@@ -93,11 +93,35 @@ function startPiece() {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    // initAudio();
+    initAudio();
     requestAnimationFrame(animationEngine);
   }
 }
+//FUNCTION initAudio ------------------------------------------------------ //
+function initAudio() {
+  actx = new(window.AudioContext || window.webkitAudioContext)();
+}
+//FUNCTION playsamp ------------------------------------------------------ //
+function playsamp(path, rate) {
+  var source = actx.createBufferSource();
+  var request = new XMLHttpRequest();
+  request.open('GET', path, true);
+  request.responseType = 'arraybuffer';
+  request.onload = function() {
+    actx.decodeAudioData(request.response, function(buffer) {
+      source.buffer = buffer;
+      source.connect(actx.destination);
+      source.loop = false;
+      source.playbackRate.value = rate;
+      source.start();
+    }, function(e) {
+      console.log('Audio error! ', e);
+    });
+  }
+  request.send();
+}
 //FUNCTION loadInitialNotation ------------------------------------------------------ //
+// var ranges = [[40, 60],[48, 67],[53, 74],[60, 81]];
 function loadInitialNotation() {
   var notesForEachPart = [];
   // pitchChanges = [] - [ time, frame, [ partsArrays ] ] - [ [b],[t],[a][s] ] - [ [b/t/a/s-1],[b/t/a/s-2],[b/t/a/s-3], [b/t/a/s-4] ] - [hz, midi, relAmp]
@@ -120,26 +144,27 @@ function loadInitialNotation() {
   for (var i = 0; i < 4; i++) {
     var timg = notesForEachPart[0][roundByStep(pitchChanges[0][2][0][i][1], 0.5)];
     pitchContainerDOMs[i].appendChild(timg);
-    currentNotation.push(timg);
+    currentPitches.push(parseFloat(pitchChanges[0][2][0][i][1]));
   }
   for (var i = 4; i < 8; i++) {
     var j = i - 4;
     var timg = notesForEachPart[1][roundByStep(pitchChanges[0][2][1][j][1], 0.5)];
     pitchContainerDOMs[i].appendChild(timg);
-    currentNotation.push(timg);
+    currentPitches.push(parseFloat(pitchChanges[0][2][1][j][1]));
   }
   for (var i = 8; i < 12; i++) {
     var j = i - 8;
     var timg = notesForEachPart[2][roundByStep(pitchChanges[0][2][2][j][1], 0.5)];
     pitchContainerDOMs[i].appendChild(timg);
-    currentNotation.push(timg);
+    currentPitches.push(parseFloat(pitchChanges[0][2][2][j][1]));
   }
   for (var i = 12; i < 16; i++) {
     var j = i - 12;
     var timg = notesForEachPart[3][roundByStep(pitchChanges[0][2][3][j][1], 0.5)];
     pitchContainerDOMs[i].appendChild(timg);
-    currentNotation.push(timg);
+    currentPitches.push(parseFloat(pitchChanges[0][2][3][j][1]));
   }
+  console.log(currentPitches);
   return notesForEachPart;
 }
 // FUNCTION: createScene ---------------------------------------------- //
@@ -264,6 +289,18 @@ function update(aMSPERFRAME) {
       if (framect == eventMatrix[i][j][2]) {
         goFretBlink[i] = framect + 9;
         scene.remove(scene.getObjectByName(eventMatrix[i][j][1].name));
+        var tactMidi = currentPitches[i];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (framect<600) {
+          console.log("+++++++++++++++++++++++++++++++++++++++++++");
+          console.log("am: " + tactMidi + " " + "rm: " + troundMidi + " " + "spd: " + tspeed);
+        }
+        if (i < 8) { //this is for male voices
+          playsamp(maleSamps[troundMidi.toString()], tspeed);
+        } else { //female voices
+          playsamp(femaleSamps[troundMidi.toString()], tspeed);
+        }
       }
     }
   }
@@ -274,23 +311,27 @@ function update(aMSPERFRAME) {
       for (var k = 0; k < 4; k++) {
         var timg = notes[0][roundByStep(pitchChanges[i][2][0][k][1], 0.5)];
         pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        currentPitches[k] = parseFloat(pitchChanges[i][2][0][k][1]);
       }
       for (var k = 4; k < 8; k++) {
         var j = k - 4;
         var timg = notes[1][roundByStep(pitchChanges[i][2][1][j][1], 0.5)];
         pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        currentPitches[k] = parseFloat(pitchChanges[i][2][1][j][1]);
       }
       for (var k = 8; k < 12; k++) {
         var j = k - 8;
         var timg = notes[2][roundByStep(pitchChanges[i][2][2][j][1], 0.5)];
         var tnotCont = document.getElementById(pitchContainers[k].id);
         pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        currentPitches[k] = parseFloat(pitchChanges[i][2][2][j][1]);
       }
       for (var k = 12; k < 16; k++) {
         var j = k - 12;
         var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
         var tnotCont = document.getElementById(pitchContainers[k].id);
         pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        currentPitches[k] = parseFloat(pitchChanges[i][2][3][j][1]);
       }
       break;
     }
@@ -375,4 +416,56 @@ function mkEventMatrix() {
     tEventMatrix.push(tTempoFretSet);
   }
   return tEventMatrix;
+}
+
+// MORE VARIABLES ------------------------------------------------------ //
+var maleSamps = {
+  45: '/samples/voices_m/45_A2_m.wav',
+  46: '/samples/voices_m/46_As2_m.wav',
+  47: '/samples/voices_m/47_B2_m.wav',
+  48: '/samples/voices_m/48_C3_m.wav',
+  49: '/samples/voices_m/49_Cs3_m.wav',
+  50: '/samples/voices_m/50_D3_m.wav',
+  51: '/samples/voices_m/51_Ds3_m.wav',
+  52: '/samples/voices_m/52_E3_m.wav',
+  53: '/samples/voices_m/53_F3_m.wav',
+  54: '/samples/voices_m/54_Fs3_m.wav',
+  55: '/samples/voices_m/55_G3_m.wav',
+  56: '/samples/voices_m/56_Gs3_m.wav',
+  57: '/samples/voices_m/57_A3_m.wav',
+  58: '/samples/voices_m/58_As3_m.wav',
+  59: '/samples/voices_m/59_B3_m.wav',
+  60: '/samples/voices_m/60_C4_m.wav',
+  61: '/samples/voices_m/61_Cs4_m.wav',
+  62: '/samples/voices_m/62_D4_m.wav',
+  63: '/samples/voices_m/63_Ds4_m.wav',
+  64: '/samples/voices_m/64_E4_m.wav'
+}
+
+var femaleSamps = {
+  57: '/samples/voices_f/57_A3_f.wav',
+  58: '/samples/voices_f/58_As3_f.wav',
+  59: '/samples/voices_f/59_B3_f.wav',
+  60: '/samples/voices_f/60_C3_f.wav',
+  61: '/samples/voices_f/61_Cs3_f.wav',
+  62: '/samples/voices_f/62_D3_f.wav',
+  63: '/samples/voices_f/63_Ds3_f.wav',
+  64: '/samples/voices_f/64_E4_f.wav',
+  65: '/samples/voices_f/65_F4_f.wav',
+  66: '/samples/voices_f/66_Fs4_f.wav',
+  67: '/samples/voices_f/67_G4_f.wav',
+  68: '/samples/voices_f/68_Gs4_f.wav',
+  69: '/samples/voices_f/69_A4_f.wav',
+  70: '/samples/voices_f/70_As4_f.wav',
+  71: '/samples/voices_f/71_B4_f.wav',
+  72: '/samples/voices_f/72_C5_f.wav',
+  73: '/samples/voices_f/73_Cs5_f.wav',
+  74: '/samples/voices_f/74_D5_f.wav',
+  75: '/samples/voices_f/75_Ds5_f.wav',
+  76: '/samples/voices_f/76_E5_f.wav',
+  77: '/samples/voices_f/77_F5_f.wav',
+  78: '/samples/voices_f/78_Fs5_f.wav',
+  79: '/samples/voices_f/79_G5_f.wav',
+  80: '/samples/voices_f/80_Gs5_f.wav',
+  81: '/samples/voices_f/81_A5_f.wav'
 }
