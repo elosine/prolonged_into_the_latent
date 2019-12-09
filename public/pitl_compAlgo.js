@@ -210,7 +210,6 @@ fetch('/pitchdata/sfAalysis003.txt')
   .then(response => response.text())
   .then(text => {
     var pitchesArray1 = [];
-    var pitchesArray2;
     var t1 = text.split(":");
     for (var i = 0; i < t1.length; i++) {
       var temparr = t1[i].split(';');
@@ -251,13 +250,13 @@ fetch('/pitchdata/sfAalysis003.txt')
     }
     // SHUFFLE UP PITCHES
     var ts = [];
-    for(var i=0;i<tnewPitchesArray.length;i++){
+    for (var i = 0; i < tnewPitchesArray.length; i++) {
       ts.push(i);
     }
     var tss = shuffle(ts);
     var tnewPitchesArray2 = [];
-    for(var i=0;i<tnewPitchesArray.length;i++){
-      tnewPitchesArray2.push( tnewPitchesArray[ tss[i] ] );
+    for (var i = 0; i < tnewPitchesArray.length; i++) {
+      tnewPitchesArray2.push(tnewPitchesArray[tss[i]]);
     }
     // pitchesArray is index for each second
     // 4 arrays for every section: bass, tenor, alto, soprano
@@ -282,7 +281,60 @@ fetch('/pitchdata/sfAalysis003.txt')
         }
       }
     }
+    // DOWNLOAD pitchChanges ----------------------------------------------- //
+    //// pitchChanges [each pitch change] [ timeSec, goFrame, [Array of pitch arrays] ] [hz, midi, relAmp]
+    var tempstr = "";
+    for (var i = 0; i < pitchChanges.length; i++) {
+      var tempstr1 = "";
+      for (var j = 0; j < pitchChanges[i][2].length; j++) {
+        var tempstr2 = "";
+        for (var k = 0; k < pitchChanges[i][2][j].length; k++) {
+          if (k == 0) {
+            tempstr2 = pitchChanges[i][2][j][k].toString();
+          } else {
+            tempstr2 = tempstr2 + "&" + pitchChanges[i][2][j][k].toString();
+          }
+        }
+        if (j == 0) {
+          tempstr1 = tempstr2;
+        } else {
+          console.log(pitchChanges[i][0].toString());
+          tempstr1 = tempstr1 + ";" + tempstr2;
+        }
+      }
+      if (i == 0) {
+        tempstr = tempstr1;
+      } else {
+        tempstr = tempstr + ":" + tempstr1;
+      }
+    }
+    // downloadStrToHD(tempstr, "pitchChanges_text", 'text/plain');
   });
+// UPLOAD pitchChanges from file -------------------------------------- //
+// fetch('/piecesData/timeCodeByPart.txt ')
+//   .then(response => response.text())
+//   .then(text => {
+// var pitchesArray1 = [];
+// var t1 = text.split(":");
+// for (var i = 0; i < t1.length; i++) {
+//   var temparr = t1[i].split(';');
+//   var t3 = [];
+//   for (var j = 0; j < temparr.length; j++) {
+//     var temparr2 = temparr[j].split("&");
+//     var t4 = [];
+//     for (var k = 0; k < temparr2.length; k++) {
+//       t4.push(temparr2[k].split(","));
+//     }
+//     var tnewFloatArr = [];
+//     for (var l = 0; l < t4.length; l++) {
+//       tnewFloatArr.push(parseFloat(t4[l]));
+//     }
+//     t3.push(tnewFloatArr);
+//   }
+//   pitchesArray1.push(t3);
+// }
+// return pitchesArray1;
+//   });
 //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
 var notesMidiDict = {
   36: '/svgs/036c2.svg',
@@ -377,9 +429,22 @@ var notesMidiDict = {
   80.5: '/svgs/080p5aqf5.svg',
   81.0: '/svgs/081a5.svg'
 }
-for (const [key, value] of Object.entries(notesMidiDict)) {}
-
-
+// for (const [key, value] of Object.entries(notesMidiDict)) {}
+//arrays to download:
+//// timeCodeByPart
+//// pitchChanges
+// timeCodeByPart[part#(0-15)][Array for each new tempo containing timecodeSec][array of timecodeSec]
+// DOWNLOAD timeCodeByPart --------------------------------------------
+// var timeCodeByPart_toString = array3dtoString(timeCodeByPart);
+// downloadStrToHD(timeCodeByPart_toString, "timeCodeByPart", 'text/plain');
+// UPLOAD timeCodeByPart from text file ----------------------------------- //
+// fetch('/piecesData/timeCodeByPart.txt ')
+//   .then(response => response.text())
+//   .then(text => {
+//     var testArr = stringTo3DFloatArray(text);
+//   });
+// DOWNLOAD pitchChanges ----------------------------------------------- //
+//// (see fetch above)
 
 
 

@@ -202,7 +202,7 @@ function floorByStep(value, step) {
 }
 
 function midiToSpeed(ogmidi, destmidi) {
-  var tspeed = Math.pow( 2, (destmidi - ogmidi) * (1.0 / 12.0) );
+  var tspeed = Math.pow(2, (destmidi - ogmidi) * (1.0 / 12.0));
   return tspeed;
 }
 
@@ -211,4 +211,27 @@ function limitRange(num, min, max) {
   tnewval = Math.min(num, max);
   tnewval = Math.max(tnewval, min);
   return tnewval;
+}
+
+function stringTo3DFloatArray(text) {
+  var pitchesArray1 = [];
+  var t1 = text.split(":");
+  for (var i = 0; i < t1.length; i++) {
+    var temparr = t1[i].split(';');
+    var t3 = [];
+    for (var j = 0; j < temparr.length; j++) {
+      var temparr2 = temparr[j].split("&");
+      var t4 = [];
+      for (var k = 0; k < temparr2.length; k++) {
+        t4.push(temparr2[k].split(","));
+      }
+      var tnewFloatArr = [];
+      for (var l = 0; l < t4.length; l++) {
+        tnewFloatArr.push(parseFloat(t4[l]));
+      }
+      t3.push(tnewFloatArr);
+    }
+    pitchesArray1.push(t3);
+  }
+  return pitchesArray1;
 }

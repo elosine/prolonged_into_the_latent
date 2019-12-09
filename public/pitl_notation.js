@@ -164,16 +164,13 @@ function loadInitialNotation() {
     pitchContainerDOMs[i].appendChild(timg);
     currentPitches.push(parseFloat(pitchChanges[0][2][3][j][1]));
   }
-  console.log(currentPitches);
   return notesForEachPart;
 }
 // FUNCTION: createScene ---------------------------------------------- //
 function createScene() {
   // Camera ////////////////////////////////
   camera = new THREE.PerspectiveCamera(75, CANVASW / CANVASH, 1, 3000);
-  // camera.position.set(0, 500, 39);
   camera.position.set(0, 560, -148);
-  // camera.rotation.x = rads(-48);
   camera.rotation.x = rads(-68);
   // Scene /////////////////////////////////
   scene = new THREE.Scene();
@@ -202,7 +199,6 @@ function createScene() {
   runway.position.z = -RUNWAYLENGTH / 2;
   runway.rotation.x = rads(-90);
   scene.add(runway);
-
   //TRACKS ///////////////////////////////////////////
   var trgeom = new THREE.CylinderGeometry(trdiameter, trdiameter, RUNWAYLENGTH, 32);
   var trmatl = new THREE.MeshLambertMaterial({
@@ -254,7 +250,7 @@ function createScene() {
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
-// FUNCTION: animationEngine ------------------------------------- //
+// FUNCTION: animationEngine -------------------------------------------- //
 function animationEngine(timestamp) {
   delta += timestamp - lastFrameTimeMs;
   lastFrameTimeMs = timestamp;
