@@ -90,6 +90,8 @@ function activateStartBtn() {
 //FUNCTION play ------------------------------------------------------ //
 function startPiece() {
   if (!played) {
+    console.log("pitchchanges");
+    console.log(pitchChanges);
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
@@ -289,8 +291,8 @@ function update(aMSPERFRAME) {
         var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
         var tspeed = midiToSpeed(troundMidi, tactMidi);
         if (framect<600) {
-          console.log("+++++++++++++++++++++++++++++++++++++++++++");
-          console.log("am: " + tactMidi + " " + "rm: " + troundMidi + " " + "spd: " + tspeed);
+          // console.log("+++++++++++++++++++++++++++++++++++++++++++");
+          // console.log("am: " + tactMidi + " " + "rm: " + troundMidi + " " + "spd: " + tspeed);
         }
         if (i < 8) { //this is for male voices
           playsamp(maleSamps[troundMidi.toString()], tspeed);

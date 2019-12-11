@@ -283,58 +283,65 @@ fetch('/pitchdata/sfAalysis003.txt')
     }
     // DOWNLOAD pitchChanges ----------------------------------------------- //
     //// pitchChanges [each pitch change] [ timeSec, goFrame, [Array of pitch arrays] ] [hz, midi, relAmp]
-    var tempstr = "";
+    var tempstr1 = "";
     for (var i = 0; i < pitchChanges.length; i++) {
-      var tempstr1 = "";
+      var tempstr2 = "";
       for (var j = 0; j < pitchChanges[i][2].length; j++) {
-        var tempstr2 = "";
+        var tempstr3 = "";
         for (var k = 0; k < pitchChanges[i][2][j].length; k++) {
           if (k == 0) {
-            tempstr2 = pitchChanges[i][2][j][k].toString();
+            tempstr3 = pitchChanges[i][2][j][k].toString();
           } else {
-            tempstr2 = tempstr2 + "&" + pitchChanges[i][2][j][k].toString();
+            tempstr3 = tempstr3 + "?" + pitchChanges[i][2][j][k].toString();
           }
         }
         if (j == 0) {
-          tempstr1 = tempstr2;
+          tempstr2 = tempstr3;
         } else {
-          console.log(pitchChanges[i][0].toString());
-          tempstr1 = tempstr1 + ";" + tempstr2;
+          tempstr2 = tempstr2 + "%" + tempstr3;
         }
       }
       if (i == 0) {
-        tempstr = tempstr1;
+        tempstr1 = pitchChanges[i][0] + "$" + pitchChanges[i][1] + "$" + tempstr2;
       } else {
-        tempstr = tempstr + ":" + tempstr1;
+        tempstr1 = tempstr1 + "&" + pitchChanges[i][0] + "$" + pitchChanges[i][1] + "$" + tempstr2;
       }
     }
-    // downloadStrToHD(tempstr, "pitchChanges_text", 'text/plain');
+    // downloadStrToHD(tempstr1, "pitchChanges_text", 'text/plain');
   });
 // UPLOAD pitchChanges from file -------------------------------------- //
-// fetch('/piecesData/timeCodeByPart.txt ')
-//   .then(response => response.text())
-//   .then(text => {
-// var pitchesArray1 = [];
-// var t1 = text.split(":");
-// for (var i = 0; i < t1.length; i++) {
-//   var temparr = t1[i].split(';');
-//   var t3 = [];
-//   for (var j = 0; j < temparr.length; j++) {
-//     var temparr2 = temparr[j].split("&");
-//     var t4 = [];
-//     for (var k = 0; k < temparr2.length; k++) {
-//       t4.push(temparr2[k].split(","));
-//     }
-//     var tnewFloatArr = [];
-//     for (var l = 0; l < t4.length; l++) {
-//       tnewFloatArr.push(parseFloat(t4[l]));
-//     }
-//     t3.push(tnewFloatArr);
-//   }
-//   pitchesArray1.push(t3);
-// }
-// return pitchesArray1;
-//   });
+fetch('/piecesData/pitchChanges_text.txt ')
+  .then(response => response.text())
+  .then(text => {
+    var pitchesArray1 = [];
+    var t1 = text.split("&");
+    var d3 = [];
+    for (var i = 0; i < t1.length; i++) {
+      var temparr = t1[i].split('$');
+      var t3 = [];
+      var t4 = temparr[2].split("%");
+      var d2 = [];
+      for (var j = 0; j < t4.length; j++) {
+        var t5 = t4[j].split("?");
+        var d1 = [];
+        for (var k = 0; k < t5.length; k++) {
+          var t6 = t5[k].split(",");
+          var t6f = [];
+          for (var l = 0; l < t6.length; l++) {
+            t6f.push(parseFloat(t6[l]));
+          }
+          d1.push(t6f);
+        }
+        d2.push(d1)
+      }
+      var d4 = [];
+      d4.push(parseFloat(temparr[0]));
+      d4.push(parseFloat(temparr[1]));
+      d4.push(d2);
+      d3.push(d4);
+    }
+    return d3;
+  });
 //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
 var notesMidiDict = {
   36: '/svgs/036c2.svg',
