@@ -62,10 +62,18 @@ var notes;
 // MISC ////////////////////////////////////////
 var played = false;
 var currentPitches = [];
+// CRESCENDOS //////////////////
+var sec2eventMatrix;
+var cresCrvCoords = plot(function(x) {
+  return Math.pow(x, 3);
+}, [0, 1, 0, 1], GOFRETWIDTH, 100);
+var cresSvgCrvs = [];
+var cresCrvFollowers = [];
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
-  eventMatrix = mkEventMatrix();
+  eventMatrix = mkEventMatrixSec1();
+  sec2eventMatrix = mkEventMatrixSec2();
   init();
 }
 // FOR FRAME BY FRAME TESTS -------------------------------------------- //
@@ -90,11 +98,10 @@ function activateStartBtn() {
 //FUNCTION play ------------------------------------------------------ //
 function startPiece() {
   if (!played) {
-    console.log("pitchchanges");
-    console.log(pitchChanges);
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
+    pieceClockAdjust(sec2start - 5);
     initAudio();
     requestAnimationFrame(animationEngine);
   }
@@ -249,9 +256,46 @@ function createScene() {
   for (var i = 0; i < pitchContainers.length; i++) {
     pitchContainerDOMs.push(document.getElementById(pitchContainers[i].id));
   }
+  //// CURVES ////
+  for (var j = 0; j < maxNumOfPlayers; j++) {
+    var tcresSvgCrv = document.createElementNS(svgNS, "path");
+    var tpathstr = "";
+    for (var i = 0; i < cresCrvCoords.length; i++) {
+      if (i == 0) {
+        tpathstr = tpathstr + "M" + cresCrvCoords[i].x.toString() + " " + cresCrvCoords[i].y.toString() + " ";
+      } else {
+        tpathstr = tpathstr + "L" + cresCrvCoords[i].x.toString() + " " + cresCrvCoords[i].y.toString() + " ";
+      }
+    }
+    tcresSvgCrv.setAttributeNS(null, "d", tpathstr);
+    tcresSvgCrv.setAttributeNS(null, "stroke", "rgba(255, 21, 160, 0.5)");
+    tcresSvgCrv.setAttributeNS(null, "stroke-width", "4");
+    tcresSvgCrv.setAttributeNS(null, "fill", "none");
+    tcresSvgCrv.setAttributeNS(null, "id", "cresCrv" + j.toString());
+    cresSvgCrvs.push(tcresSvgCrv);
+  }
+  // CURVE FOLLOWERS
+  for (var j = 0; j < maxNumOfPlayers; j++) {
+    var tcresSvgCirc = document.createElementNS(svgNS, "circle");
+    tcresSvgCirc.setAttributeNS(null, "cx", cresCrvCoords[0].x.toString());
+    tcresSvgCirc.setAttributeNS(null, "cy", cresCrvCoords[0].y.toString());
+    tcresSvgCirc.setAttributeNS(null, "r", "10");
+    tcresSvgCirc.setAttributeNS(null, "stroke", "none");
+    tcresSvgCirc.setAttributeNS(null, "fill", "rgba(255, 21, 160, 0.5)");
+    tcresSvgCirc.setAttributeNS(null, "id", "cresCrvCirc" + j.toString());
+    cresCrvFollowers.push(tcresSvgCirc);
+    //Make FOLLOWERS
+    var tcrvFset = [];
+    tcrvFset.push(true);
+    tcrvFset.push(0.0);
+    crvFollowData.push(tcrvFset);
+  }
+  pitchContainerDOMs[0].appendChild(cresSvgCrvs[0]);
+  pitchContainerDOMs[0].appendChild(cresCrvFollowers[0]);
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
+var crvFollowData = [];
 // FUNCTION: animationEngine -------------------------------------------- //
 function animationEngine(timestamp) {
   delta += timestamp - lastFrameTimeMs;
@@ -263,17 +307,40 @@ function animationEngine(timestamp) {
   }
   requestAnimationFrame(animationEngine);
 }
+//work out how to start later on in the piece
+function pieceClockAdjust(time) {
+  var tNewFrame = (time + leadTime) * FRAMERATE;
+    // var tNewFrame = time * FRAMERATE;
+  framect = Math.round(tNewFrame);
+  //Sec 1
+  for (var i = 0; i < eventMatrix.length; i++) {
+    for (var j = 0; j < eventMatrix[i].length; j++) {
+      //move each event
+      eventMatrix[i][j][1].position.z += (tNewFrame * PXPERFRAME);
+    }
+  }
+  //Sec 2
+  for (var i = 0; i < sec2eventMatrix.length; i++) {
+    for (var j = 0; j < sec2eventMatrix[i].length; j++) {
+      //move each event
+      sec2eventMatrix[i][j][1].position.z += (tNewFrame * PXPERFRAME);
+    }
+  }
+}
 // UPDATE -------------------------------------------------------------- //
+var tt = true;
+
 function update(aMSPERFRAME) {
   // CLOCK ///////////////////////////////////////////////
   framect++;
   pieceClock += aMSPERFRAME;
   pieceClock = pieceClock - clockadj;
   // // EVENTS /////////////////////////////////////////////////////
+  // // // SECTION 1
   for (var i = 0; i < eventMatrix.length; i++) {
     for (var j = 0; j < eventMatrix[i].length; j++) {
       //add the tf to the scene if it is on the runway
-      if (eventMatrix[i][j][1].position.z > (-RUNWAYLENGTH)) {
+      if (eventMatrix[i][j][1].position.z > (-RUNWAYLENGTH) && eventMatrix[i][j][1].position.z < GOFRETPOSZ) {
         if (eventMatrix[i][j][0]) {
           eventMatrix[i][j][0] = false;
           scene.add(eventMatrix[i][j][1]);
@@ -290,10 +357,6 @@ function update(aMSPERFRAME) {
         var tactMidi = currentPitches[i];
         var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
         var tspeed = midiToSpeed(troundMidi, tactMidi);
-        if (framect<600) {
-          // console.log("+++++++++++++++++++++++++++++++++++++++++++");
-          // console.log("am: " + tactMidi + " " + "rm: " + troundMidi + " " + "spd: " + tspeed);
-        }
         if (i < 8) { //this is for male voices
           playsamp(maleSamps[troundMidi.toString()], tspeed);
         } else { //female voices
@@ -302,33 +365,86 @@ function update(aMSPERFRAME) {
       }
     }
   }
+  // // // SECTION 2
+  for (var i = 0; i < sec2eventMatrix.length; i++) {
+    for (var j = 0; j < sec2eventMatrix[i].length; j++) {
+      //add the tf to the scene if it is on the runway
+      if (sec2eventMatrix[i][j][1].position.z > (-RUNWAYLENGTH) && sec2eventMatrix[i][j][1].position.z < GOFRETPOSZ) {
+        if (sec2eventMatrix[i][j][0]) {
+          sec2eventMatrix[i][j][0] = false;
+          scene.add(sec2eventMatrix[i][j][1]);
+        }
+      }
+      //advance tf if it is not past gofret
+      if (sec2eventMatrix[i][j][1].position.z < (GOFRETPOSZ + sec2eventMatrix[i][j][7])) {
+        sec2eventMatrix[i][j][1].position.z += PXPERFRAME;
+      }
+      //When tf reaches goline, blink and remove
+      if (framect >= sec2eventMatrix[i][j][2] && framect < sec2eventMatrix[i][j][6]) {
+        crvFollowData[i][0] = true;
+        crvFollowData[i][1] = scale(framect, sec2eventMatrix[i][j][2], sec2eventMatrix[i][j][6], 0.0, 1.0);
+        // Play Samples
+        // var tactMidi = currentPitches[i];
+        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        // var tspeed = midiToSpeed(troundMidi, tactMidi);
+        // if (i < 8) { //this is for male voices
+        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
+        // } else { //female voices
+        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
+        // }
+      }
+      //end of event remove
+      if (framect == sec2eventMatrix[i][j][6]) {
+        crvFollowData[i][0] = false;
+        scene.remove(scene.getObjectByName(sec2eventMatrix[i][j][1].name));
+
+      }
+    }
+
+    //crv follow
+    // var tnewCresEvent = [true, tcresEventMesh, tGoFrm, tTime, tNumPxTilGo, tiGoPx, tOffFrm, tcresEventLength]; //[gate so tempofret is added to scene only once, mesh, goFrame]
+
+    if (crvFollowData[i][0]) {
+      var tcoordsix = Math.floor(scale(crvFollowData[i][1], 0.0, 1.0, 0, cresCrvCoords.length));
+      cresCrvFollowers[i].setAttributeNS(null, "cx", cresCrvCoords[tcoordsix].x.toString());
+      cresCrvFollowers[i].setAttributeNS(null, "cy", cresCrvCoords[tcoordsix].y.toString());
+    }
+  }
   // NOTATION //////////////////
   //REMOVE PREVIOUS NOTATION
   for (var i = 1; i < pitchChanges.length; i++) {
     if (pitchChanges[i][1] == framect) {
       for (var k = 0; k < 4; k++) {
         var timg = notes[0][roundByStep(pitchChanges[i][2][0][k][1], 0.5)];
-        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        for (var l = 0; l < pitchContainerDOMs[k].children.length; l++) {
+          pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[l]);
+        }
         currentPitches[k] = parseFloat(pitchChanges[i][2][0][k][1]);
       }
       for (var k = 4; k < 8; k++) {
         var j = k - 4;
         var timg = notes[1][roundByStep(pitchChanges[i][2][1][j][1], 0.5)];
-        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        for (var l = 0; l < pitchContainerDOMs[k].children.length; l++) {
+          pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[l]);
+        }
         currentPitches[k] = parseFloat(pitchChanges[i][2][1][j][1]);
       }
       for (var k = 8; k < 12; k++) {
         var j = k - 8;
         var timg = notes[2][roundByStep(pitchChanges[i][2][2][j][1], 0.5)];
         var tnotCont = document.getElementById(pitchContainers[k].id);
-        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        for (var l = 0; l < pitchContainerDOMs[k].children.length; l++) {
+          pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[l]);
+        }
         currentPitches[k] = parseFloat(pitchChanges[i][2][2][j][1]);
       }
       for (var k = 12; k < 16; k++) {
         var j = k - 12;
         var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
         var tnotCont = document.getElementById(pitchContainers[k].id);
-        pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[0]);
+        for (var l = 0; l < pitchContainerDOMs[k].children.length; l++) {
+          pitchContainerDOMs[k].removeChild(pitchContainerDOMs[k].children[l]);
+        }
         currentPitches[k] = parseFloat(pitchChanges[i][2][3][j][1]);
       }
       break;
@@ -337,35 +453,35 @@ function update(aMSPERFRAME) {
   //ADD NEW NOTATION
   for (var i = 1; i < pitchChanges.length; i++) {
     if (pitchChanges[i][1] == framect) {
-      console.log("----------");
-      console.log("----------");
       for (var k = 0; k < 4; k++) {
-        console.log(roundByStep(pitchChanges[i][2][0][k][1], 0.5));
         var timg = notes[0][roundByStep(pitchChanges[i][2][0][k][1], 0.5)];
         pitchContainerDOMs[k].appendChild(timg);
       }
       for (var k = 4; k < 8; k++) {
         var j = k - 4;
-        console.log(roundByStep(pitchChanges[i][2][1][j][1], 0.5));
         var timg = notes[1][roundByStep(pitchChanges[i][2][1][j][1], 0.5)];
         pitchContainerDOMs[k].appendChild(timg);
       }
       for (var k = 8; k < 12; k++) {
         var j = k - 8;
-        console.log(roundByStep(pitchChanges[i][2][2][j][1], 0.5));
         var timg = notes[2][roundByStep(pitchChanges[i][2][2][j][1], 0.5)];
         pitchContainerDOMs[k].appendChild(timg);
       }
       for (var k = 12; k < 16; k++) {
         var j = k - 12;
-        console.log(roundByStep(pitchChanges[i][2][3][j][1], 0.5));
         var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
         pitchContainerDOMs[k].appendChild(timg);
       }
       break;
     }
   }
-
+  // ADD CURVES /////
+  if (framect > (sec2start * FRAMERATE)) {
+    for (var i = 0; i < pitchContainerDOMs.length; i++) {
+      pitchContainerDOMs[i].appendChild(cresSvgCrvs[i]);
+      pitchContainerDOMs[i].appendChild(cresCrvFollowers[i]);
+    }
+  }
 }
 // DRAW ----------------------------------------------------------------- //
 function draw() {
@@ -384,7 +500,7 @@ function draw() {
 }
 // FUNCTION: mkEventSection ------------------------------------------- //
 //FLATTEN EVENTS INTO ONE ARRAY PER PERFORMER
-function mkEventMatrix() {
+function mkEventMatrixSec1() {
   var tEventMatrix = [];
   var tempoFretIx = 0;
   for (var i = 0; i < timeCodeByPart.length; i++) {
@@ -394,6 +510,7 @@ function mkEventMatrix() {
         var tTimeGopxGoFrm = [];
         var tTime = timeCodeByPart[i][j][k];
         tTime = tTime + leadTime;
+        // tTime = tTime ;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -412,6 +529,41 @@ function mkEventMatrix() {
       }
     }
     tEventMatrix.push(tTempoFretSet);
+  }
+  return tEventMatrix;
+}
+// FUNCTION: mkEventSection ------------------------------------------- //
+//FLATTEN EVENTS INTO ONE ARRAY PER PERFORMER
+function mkEventMatrixSec2() {
+  var tEventMatrix = [];
+  var teventMeshIx = 0;
+  for (var i = 0; i < sec2TimeCodeByPart.length; i++) {
+    var tcresEventSet = [];
+    for (var j = 0; j < sec2TimeCodeByPart[i].length; j++) {
+      var tTimeGopxGoFrm = [];
+      var tTime = sec2TimeCodeByPart[i][j];
+      tTime = tTime + leadTime;
+      // tTime = tTime;
+      var tNumPxTilGo = tTime * PXPERSEC;
+      var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
+      var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
+      var tempMatl = new THREE.MeshLambertMaterial({
+        color: fretClr[j % 2]
+      });
+      var tcresEventLength = cresDurs[i] * PXPERSEC;
+      var teventdurframes = Math.round(cresDurs[i] * FRAMERATE);
+      var tOffFrm = tGoFrm + teventdurframes;
+      var tcresEventGeom = new THREE.CubeGeometry(50, GOFRETHEIGHT + 5, tcresEventLength);
+      var tcresEventMesh = new THREE.Mesh(tcresEventGeom, tempMatl);
+      tcresEventMesh.position.z = tiGoPx;
+      tcresEventMesh.position.y = GOFRETHEIGHT;
+      tcresEventMesh.position.x = -trackXoffset + (spaceBtwnTracks * i);
+      tcresEventMesh.name = "cresEvent" + teventMeshIx;
+      teventMeshIx++;
+      var tnewCresEvent = [true, tcresEventMesh, tGoFrm, tTime, tNumPxTilGo, tiGoPx, tOffFrm, tcresEventLength]; //[gate so tempofret is added to scene only once, mesh, goFrame]
+      tcresEventSet.push(tnewCresEvent);
+    }
+    tEventMatrix.push(tcresEventSet);
   }
   return tEventMatrix;
 }

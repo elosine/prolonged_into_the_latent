@@ -235,3 +235,43 @@ function stringTo3DFloatArray(text) {
   }
   return pitchesArray1;
 }
+
+function distributeOverRange(min, max, numVals) {
+  var trange = max - min;
+  var tinc = trange / numVals;
+  var tvals = [];
+  for (var i = 0; i < numVals; i++) {
+    tvals.push(min + rrand((i * tinc), ((i + 1) * tinc)));
+  }
+  return tvals;
+}
+
+function plot(fn, range, width, height) {
+  var tpoints = [];
+  var widthScale = (width / (range[1] - range[0]));
+  var heightScale = (height / (range[3] - range[2]));
+  var first = true;
+  for (var x = 0; x < width; x++) {
+    var xFnVal = (x / widthScale) - range[0];
+    var yGVal = (fn(xFnVal) - range[2]) * heightScale;
+    yGVal = height - yGVal; // 0,0 is top-left
+      var tar = {};
+      tar.x = x;
+      tar.y = yGVal;
+      first = false;
+      tpoints.push(tar);
+  }
+  return tpoints;
+}
+
+
+
+
+
+
+
+
+
+
+
+//

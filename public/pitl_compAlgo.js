@@ -16,6 +16,7 @@ var s3_4 = s2thru4 - section2dur;
 var section3dur = s3_4 * rrand(0.57, 0.63);
 //Section 3: Accel & Hocket what remains
 var section4dur = s3_4 - section3dur;
+// SECTION 1 ------------------------------------------------------------- //
 //Section 1 Tempo Changes
 var sec1TempoChanges = palindromeTimeContainers(section1dur, 2.4, 9, 0.03, 0.06);
 //For every tempo change how many simultaneous tempi
@@ -268,7 +269,8 @@ fetch('/pitchdata/sfAalysis003.txt')
       var ttimepartsarr = [];
       var ttimecode;
       if (i != 0) {
-        ttimecode = leadTime + pitchChangeTimes[i];
+        // ttimecode = leadTime + pitchChangeTimes[i];
+          ttimecode = pitchChangeTimes[i];
       } else ttimecode = 0.0;
       ttimepartsarr.push(ttimecode);
       ttimepartsarr.push(Math.round(ttimecode * FRAMERATE));
@@ -310,38 +312,40 @@ fetch('/pitchdata/sfAalysis003.txt')
     // downloadStrToHD(tempstr1, "pitchChanges_text", 'text/plain');
   });
 // UPLOAD pitchChanges from file -------------------------------------- //
-fetch('/piecesData/pitchChanges_text.txt ')
-  .then(response => response.text())
-  .then(text => {
-    var pitchesArray1 = [];
-    var t1 = text.split("&");
-    var d3 = [];
-    for (var i = 0; i < t1.length; i++) {
-      var temparr = t1[i].split('$');
-      var t3 = [];
-      var t4 = temparr[2].split("%");
-      var d2 = [];
-      for (var j = 0; j < t4.length; j++) {
-        var t5 = t4[j].split("?");
-        var d1 = [];
-        for (var k = 0; k < t5.length; k++) {
-          var t6 = t5[k].split(",");
-          var t6f = [];
-          for (var l = 0; l < t6.length; l++) {
-            t6f.push(parseFloat(t6[l]));
+function uploadPitchChangesFromFile(path) {
+  fetch(path)
+    .then(response => response.text())
+    .then(text => {
+      var pitchesArray1 = [];
+      var t1 = text.split("&");
+      var d3 = [];
+      for (var i = 0; i < t1.length; i++) {
+        var temparr = t1[i].split('$');
+        var t3 = [];
+        var t4 = temparr[2].split("%");
+        var d2 = [];
+        for (var j = 0; j < t4.length; j++) {
+          var t5 = t4[j].split("?");
+          var d1 = [];
+          for (var k = 0; k < t5.length; k++) {
+            var t6 = t5[k].split(",");
+            var t6f = [];
+            for (var l = 0; l < t6.length; l++) {
+              t6f.push(parseFloat(t6[l]));
+            }
+            d1.push(t6f);
           }
-          d1.push(t6f);
+          d2.push(d1)
         }
-        d2.push(d1)
+        var d4 = [];
+        d4.push(parseFloat(temparr[0]));
+        d4.push(parseFloat(temparr[1]));
+        d4.push(d2);
+        d3.push(d4);
       }
-      var d4 = [];
-      d4.push(parseFloat(temparr[0]));
-      d4.push(parseFloat(temparr[1]));
-      d4.push(d2);
-      d3.push(d4);
-    }
-    return d3;
-  });
+      return d3;
+    });
+}
 //MAKE DICTIONARY OF PITCH NOTATION BY MIDI NOTE NUMBER AND PATH STRING
 var notesMidiDict = {
   36: '/svgs/036c2.svg',
@@ -452,6 +456,69 @@ var notesMidiDict = {
 //   });
 // DOWNLOAD pitchChanges ----------------------------------------------- //
 //// (see fetch above)
+
+
+// SECTION 2 ------------------------------------------------------------- //
+// Find end of section 1
+var sec1LastEventTime = 0;
+for (var i = 0; i < timeCodeByPart.length; i++) {
+  var tlast = timeCodeByPart[i].length - 1;
+  var tlast2 = timeCodeByPart[i][tlast].length - 1;
+  var tlast3 = timeCodeByPart[i][tlast][tlast2];
+  if (tlast3 > sec1LastEventTime) {
+    sec1LastEventTime = tlast3;
+  }
+}
+// Create sec2 timecode by parts
+var sec1sec2Gap = 3;
+// var sec2start = sec1LastEventTime + sec1sec2Gap + leadTime;
+var sec2start = sec1LastEventTime + sec1sec2Gap;
+var breath = 2.7;
+var cresMin = 5.9;
+var cresMax = 7.83;
+var cresDurs = distributeOverRange(cresMin, cresMax, maxNumOfPlayers);
+var sec2TimeCodeByPart = [];
+var endSec2Time = sec2start + section2dur;
+for (var i = 0; i < maxNumOfPlayers; i++) {
+  var tempar = [];
+  sec2TimeCodeByPart.push(tempar);
+  for (var j = 0; j < 1000; j++) {
+    var tnextTimeCode = sec2start + ((cresDurs[i] + breath) * j);
+    if (tnextTimeCode > endSec2Time) {
+      break;
+    } else {
+      sec2TimeCodeByPart[i].push(tnextTimeCode);
+    }
+  }
+}
+
+
+//FIGURE OUT LEAD TIME
+
+
+
+
+
+// for (var i = 0; i < maxNumOfPlayers; i++) {
+//   var tempar = [];
+//   sec2TimeCodeByPart.push(tempar);
+// }
+// var endSec2Time = sec2start + section2dur;
+// console.log(sec2start + " " + endSec2Time);
+// for (var j = 0; j < 100; j++) {
+//   var tnextTimeCodeMax = 0;
+//   var tnextTimeCode = sec2start;
+//   for (var i = 0; i < maxNumOfPlayers; i++) {
+//     sec2TimeCodeByPart[i].push(tnextTimeCode);
+//     tnextTimeCode = sec2start + ((cresDurs[i] + breath) * j);
+//     if (tnextTimeCode > tnextTimeCodeMax) {
+//       tnextTimeCodeMax = tnextTimeCode;
+//     }
+//   }
+//   if (tnextTimeCodeMax > endSec2Time) {
+//     break;
+//   }
+// }
 
 
 
