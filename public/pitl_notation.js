@@ -72,6 +72,7 @@ var cresSvgCrvs = [];
 var cresCrvFollowers = [];
 var cresCrvFollowersRect = [];
 var sec3eventMatrixHocket, sec3eventMatrixCres, sec3eventMatrixAccel, sec4eventMatrix;
+var sec2CresStart;
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
@@ -102,13 +103,24 @@ function activateStartBtn() {
   var startButton = document.getElementById("startButton");
   startButton.addEventListener("click", startPiece);
 }
+//FUNCTION mkStartBtn ------------------------------------------------- //
+function getCresStartTimes() {
+  // Find Pitch Change before sec2start
+  for (var i = 0; i < pitchChanges.length; i++) {
+    if (sec2start < pitchChanges[i][0]) {
+      sec2CresStart = pitchChanges[i][0];
+      break;
+    }
+  }
+}
 //FUNCTION play ------------------------------------------------------ //
 function startPiece() {
   if (!played) {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    pieceClockAdjust(sec4StartTime - 15);
+    pieceClockAdjust(sec2start - 5);
+    getCresStartTimes();
     initAudio();
     requestAnimationFrame(animationEngine);
   }
@@ -272,7 +284,7 @@ function createScene() {
     tcresFollowRect.setAttributeNS(null, "height", "0");
     tcresFollowRect.setAttributeNS(null, "fill", "rgba(255, 21, 160, 0.5)");
     tcresFollowRect.setAttributeNS(null, "id", "cresFollowRect" + j.toString());
-    tcresFollowRect.setAttributeNS(null, "transform", "translate( 0, -3)" );
+    tcresFollowRect.setAttributeNS(null, "transform", "translate( 0, -3)");
     cresCrvFollowersRect.push(tcresFollowRect);
   }
   //// CURVES ////
@@ -291,7 +303,7 @@ function createScene() {
     tcresSvgCrv.setAttributeNS(null, "stroke-width", "4");
     tcresSvgCrv.setAttributeNS(null, "fill", "none");
     tcresSvgCrv.setAttributeNS(null, "id", "cresCrv" + j.toString());
-    tcresSvgCrv.setAttributeNS(null, "transform", "translate( 0, -3)" );
+    tcresSvgCrv.setAttributeNS(null, "transform", "translate( 0, -3)");
     cresSvgCrvs.push(tcresSvgCrv);
   }
   // CURVE FOLLOWERS
@@ -303,7 +315,7 @@ function createScene() {
     tcresSvgCirc.setAttributeNS(null, "stroke", "none");
     tcresSvgCirc.setAttributeNS(null, "fill", "rgba(255, 21, 160, 0.5)");
     tcresSvgCirc.setAttributeNS(null, "id", "cresCrvCirc" + j.toString());
-    tcresSvgCirc.setAttributeNS(null, "transform", "translate( 0, -3)" );
+    tcresSvgCirc.setAttributeNS(null, "transform", "translate( 0, -3)");
     cresCrvFollowers.push(tcresSvgCirc);
     //Make FOLLOWERS
     var tcrvFset = [];
@@ -656,18 +668,45 @@ function update(aMSPERFRAME) {
         var timg = notes[3][roundByStep(pitchChanges[i][2][3][j][1], 0.5)];
         pitchContainerDOMs[k].appendChild(timg);
       }
+
+      // ADD CURVES /////
+      //find pitch change before section 2
+      if (drwCrvFollow) {
+        for (var i = 0; i < pitchContainerDOMs.length; i++) {
+          pitchContainerDOMs[i].appendChild(cresSvgCrvs[i]);
+          pitchContainerDOMs[i].appendChild(cresCrvFollowers[i]);
+          pitchContainerDOMs[i].appendChild(cresCrvFollowersRect[i]);
+        }
+      }
       break;
     }
   }
-  // ADD CURVES /////
-  if (framect > (sec2start * FRAMERATE)) {
+  //Draw crv followers only when needed
+  if (framect == (Math.round(sec2start * FRAMERATE) + (leadTime * FRAMERATE))) {
+    drwCrvFollow = true;
     for (var i = 0; i < pitchContainerDOMs.length; i++) {
       pitchContainerDOMs[i].appendChild(cresSvgCrvs[i]);
       pitchContainerDOMs[i].appendChild(cresCrvFollowers[i]);
       pitchContainerDOMs[i].appendChild(cresCrvFollowersRect[i]);
     }
   }
+  //Remove at end of section 2
+  if (framect == (Math.round(endSec2Time * FRAMERATE) + (leadTime * FRAMERATE))) {
+    drwCrvFollow = false;
+    for (var i = 0; i < cresSvgCrvs.length; i++) {
+      document.getElementById(cresSvgCrvs[i].id).remove();
+    }
+    for (var i = 0; i < cresCrvFollowers.length; i++) {
+      document.getElementById(cresCrvFollowers[i].id).remove();
+    }
+    for (var i = 0; i < cresCrvFollowersRect.length; i++) {
+      document.getElementById(cresCrvFollowersRect[i].id).remove();
+    }
+
+  }
 }
+
+var drwCrvFollow = false;
 // DRAW ----------------------------------------------------------------- //
 function draw() {
   // // GO FRET BLINK TIMER ///////////////////////////////////
@@ -694,6 +733,7 @@ function mkEventMatrixSec1() {
       for (var k = 0; k < timeCodeByPart[i][j].length; k++) {
         var tTimeGopxGoFrm = [];
         var tTime = timeCodeByPart[i][j][k];
+        tTime = tTime + leadTime;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -725,6 +765,7 @@ function mkEventMatrixSec2() {
     for (var j = 0; j < sec2TimeCodeByPart[i].length; j++) {
       var tTimeGopxGoFrm = [];
       var tTime = sec2TimeCodeByPart[i][j];
+      tTime = tTime + leadTime;
       var tNumPxTilGo = tTime * PXPERSEC;
       var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
       var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -758,6 +799,7 @@ function mkEventMatrixSec3Hocket() {
       for (var k = 0; k < sec3HocketTimeCode[i][j].length; k++) {
         var tTimeGopxGoFrm = [];
         var tTime = sec3HocketTimeCode[i][j][k];
+        tTime = tTime + leadTime;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -787,6 +829,7 @@ function mkEventMatrixSec3Cres() {
     for (var j = 0; j < sec3CresTimeCodeByPart[i].length; j++) {
       var tTimeGopxGoFrm = [];
       var tTime = sec3CresTimeCodeByPart[i][j];
+      tTime = tTime + leadTime;
       var tNumPxTilGo = tTime * PXPERSEC;
       var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
       var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -820,6 +863,7 @@ function mkEventMatrixSec3Accel() {
       for (var k = 0; k < sec3AccelTimeCode[i][j].length; k++) {
         var tTimeGopxGoFrm = [];
         var tTime = sec3AccelTimeCode[i][j][k];
+        tTime = tTime + leadTime;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -847,22 +891,23 @@ function mkEventMatrixSec4() {
   for (var i = 0; i < sec4TimeCode.length; i++) {
     var tTempoFretSet = [];
     for (var j = 0; j < sec4TimeCode[i].length; j++) {
-        var tTimeGopxGoFrm = [];
-        var tTime = sec4TimeCode[i][j];
-        var tNumPxTilGo = tTime * PXPERSEC;
-        var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
-        var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
-        var tempMatl = new THREE.MeshLambertMaterial({
-          color: fretClr[0]
-        });
-        var tempSec3HocketFret = new THREE.Mesh(tempoFretGeom, tempMatl);
-        tempSec3HocketFret.position.z = tiGoPx;
-        tempSec3HocketFret.position.y = GOFRETHEIGHT;
-        tempSec3HocketFret.position.x = -trackXoffset + (spaceBtwnTracks * i);
-        tempSec3HocketFret.name = "sec4Fret" + tempoFretIx;
-        tempoFretIx++;
-        var tnewTempoFret = [true, tempSec3HocketFret, tGoFrm, tTime, tNumPxTilGo, tiGoPx]; //[gate so tempofret is added to scene only once, mesh, goFrame]
-        tTempoFretSet.push(tnewTempoFret);
+      var tTimeGopxGoFrm = [];
+      var tTime = sec4TimeCode[i][j];
+      tTime = tTime + leadTime;
+      var tNumPxTilGo = tTime * PXPERSEC;
+      var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
+      var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
+      var tempMatl = new THREE.MeshLambertMaterial({
+        color: fretClr[0]
+      });
+      var tempSec3HocketFret = new THREE.Mesh(tempoFretGeom, tempMatl);
+      tempSec3HocketFret.position.z = tiGoPx;
+      tempSec3HocketFret.position.y = GOFRETHEIGHT;
+      tempSec3HocketFret.position.x = -trackXoffset + (spaceBtwnTracks * i);
+      tempSec3HocketFret.name = "sec4Fret" + tempoFretIx;
+      tempoFretIx++;
+      var tnewTempoFret = [true, tempSec3HocketFret, tGoFrm, tTime, tNumPxTilGo, tiGoPx]; //[gate so tempofret is added to scene only once, mesh, goFrame]
+      tTempoFretSet.push(tnewTempoFret);
 
     }
     tEventMatrix.push(tTempoFretSet);

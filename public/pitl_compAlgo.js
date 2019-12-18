@@ -538,7 +538,7 @@ for (var i = 0; i < sec3Cres.length; i++) {
   var tempar = [];
   sec3CresTimeCodeByPart.push(tempar);
   for (var j = 0; j < 1000; j++) {
-    var tnextTimeCode = (sec3CresDurs[i] + breath) * j;
+    var tnextTimeCode = ((sec3CresDurs[i] + breath) * j) + sec3StartTime;
     if (tnextTimeCode > sec3EndTime) {
       break;
     } else {
@@ -595,10 +595,15 @@ for (var i = 0; i < maxNumOfPlayers; i++) {
 }
 /*
 NOTES
-Pitch Change Indicators
-Function to save sec2 on data
+Finish removing cres indicators
+Samples Record Demo
+Sample Part Score
+
+Function to save/reload piece data
 sec2TimeCodeByPart
 sec3HocketTimeCode
 sec3AccelTimeCode
-Sample Part Score
+
+Pitch Change Indicators
+
 */
