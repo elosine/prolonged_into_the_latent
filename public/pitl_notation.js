@@ -59,6 +59,7 @@ var svgXlink = 'http://www.w3.org/1999/xlink';
 var pitchContainers = [];
 var pitchContainerDOMs = [];
 var notes;
+var notationCanvasH = 100.0;
 // MISC ////////////////////////////////////////
 var played = false;
 var currentPitches = [];
@@ -66,9 +67,10 @@ var currentPitches = [];
 var sec2eventMatrix;
 var cresCrvCoords = plot(function(x) {
   return Math.pow(x, 3);
-}, [0, 1, 0, 1], GOFRETWIDTH, 100);
+}, [0, 1, 0, 1], GOFRETWIDTH, notationCanvasH);
 var cresSvgCrvs = [];
 var cresCrvFollowers = [];
+var cresCrvFollowersRect = [];
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
@@ -101,7 +103,7 @@ function startPiece() {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    pieceClockAdjust(sec2start - 5);
+    pieceClockAdjust(sec2start - 12);
     initAudio();
     requestAnimationFrame(animationEngine);
   }
@@ -242,7 +244,7 @@ function createScene() {
     var tcont = document.getElementById("notationOuterDiv");
     var tsvgCanvas = document.createElementNS(svgNS, "svg");
     tsvgCanvas.setAttributeNS(null, "width", GOFRETWIDTH.toString());
-    tsvgCanvas.setAttributeNS(null, "height", "100");
+    tsvgCanvas.setAttributeNS(null, "height", notationCanvasH.toString());
     tsvgCanvas.setAttributeNS(null, "id", "notationSVGcont" + i.toString());
     var trMargin = 34;
     var ttrgap = 20.3;
@@ -255,6 +257,18 @@ function createScene() {
   }
   for (var i = 0; i < pitchContainers.length; i++) {
     pitchContainerDOMs.push(document.getElementById(pitchContainers[i].id));
+  }
+  // CURVE FOLLOW RECTS /////////////////////////////////////////////
+  for (var j = 0; j < maxNumOfPlayers; j++) {
+    var tcresFollowRect = document.createElementNS(svgNS, "rect");
+    tcresFollowRect.setAttributeNS(null, "x", "0");
+    tcresFollowRect.setAttributeNS(null, "y", "0");
+    tcresFollowRect.setAttributeNS(null, "width", GOFRETWIDTH.toString());
+    tcresFollowRect.setAttributeNS(null, "height", "0");
+    tcresFollowRect.setAttributeNS(null, "fill", "rgba(255, 21, 160, 0.5)");
+    tcresFollowRect.setAttributeNS(null, "id", "cresFollowRect" + j.toString());
+    tcresFollowRect.setAttributeNS(null, "transform", "translate( 0, -3)" );
+    cresCrvFollowersRect.push(tcresFollowRect);
   }
   //// CURVES ////
   for (var j = 0; j < maxNumOfPlayers; j++) {
@@ -272,6 +286,7 @@ function createScene() {
     tcresSvgCrv.setAttributeNS(null, "stroke-width", "4");
     tcresSvgCrv.setAttributeNS(null, "fill", "none");
     tcresSvgCrv.setAttributeNS(null, "id", "cresCrv" + j.toString());
+    tcresSvgCrv.setAttributeNS(null, "transform", "translate( 0, -3)" );
     cresSvgCrvs.push(tcresSvgCrv);
   }
   // CURVE FOLLOWERS
@@ -283,6 +298,7 @@ function createScene() {
     tcresSvgCirc.setAttributeNS(null, "stroke", "none");
     tcresSvgCirc.setAttributeNS(null, "fill", "rgba(255, 21, 160, 0.5)");
     tcresSvgCirc.setAttributeNS(null, "id", "cresCrvCirc" + j.toString());
+    tcresSvgCirc.setAttributeNS(null, "transform", "translate( 0, -3)" );
     cresCrvFollowers.push(tcresSvgCirc);
     //Make FOLLOWERS
     var tcrvFset = [];
@@ -290,8 +306,6 @@ function createScene() {
     tcrvFset.push(0.0);
     crvFollowData.push(tcrvFset);
   }
-  pitchContainerDOMs[0].appendChild(cresSvgCrvs[0]);
-  pitchContainerDOMs[0].appendChild(cresCrvFollowers[0]);
   // RENDER /////////////////////////////////////////////
   renderer.render(scene, camera);
 }
@@ -307,10 +321,10 @@ function animationEngine(timestamp) {
   }
   requestAnimationFrame(animationEngine);
 }
-//work out how to start later on in the piece
+
 function pieceClockAdjust(time) {
   var tNewFrame = (time + leadTime) * FRAMERATE;
-    // var tNewFrame = time * FRAMERATE;
+  // var tNewFrame = time * FRAMERATE;
   framect = Math.round(tNewFrame);
   //Sec 1
   for (var i = 0; i < eventMatrix.length; i++) {
@@ -328,8 +342,6 @@ function pieceClockAdjust(time) {
   }
 }
 // UPDATE -------------------------------------------------------------- //
-var tt = true;
-
 function update(aMSPERFRAME) {
   // CLOCK ///////////////////////////////////////////////
   framect++;
@@ -365,7 +377,7 @@ function update(aMSPERFRAME) {
       }
     }
   }
-  // // // SECTION 2
+  ///// SECTION 2 ------------------------------------------------------- //
   for (var i = 0; i < sec2eventMatrix.length; i++) {
     for (var j = 0; j < sec2eventMatrix[i].length; j++) {
       //add the tf to the scene if it is on the runway
@@ -381,6 +393,7 @@ function update(aMSPERFRAME) {
       }
       //When tf reaches goline, blink and remove
       if (framect >= sec2eventMatrix[i][j][2] && framect < sec2eventMatrix[i][j][6]) {
+        goFretBlink[i] = framect + 9;
         crvFollowData[i][0] = true;
         crvFollowData[i][1] = scale(framect, sec2eventMatrix[i][j][2], sec2eventMatrix[i][j][6], 0.0, 1.0);
         // Play Samples
@@ -397,17 +410,19 @@ function update(aMSPERFRAME) {
       if (framect == sec2eventMatrix[i][j][6]) {
         crvFollowData[i][0] = false;
         scene.remove(scene.getObjectByName(sec2eventMatrix[i][j][1].name));
-
       }
     }
-
     //crv follow
     // var tnewCresEvent = [true, tcresEventMesh, tGoFrm, tTime, tNumPxTilGo, tiGoPx, tOffFrm, tcresEventLength]; //[gate so tempofret is added to scene only once, mesh, goFrame]
-
     if (crvFollowData[i][0]) {
       var tcoordsix = Math.floor(scale(crvFollowData[i][1], 0.0, 1.0, 0, cresCrvCoords.length));
+      //circ
       cresCrvFollowers[i].setAttributeNS(null, "cx", cresCrvCoords[tcoordsix].x.toString());
       cresCrvFollowers[i].setAttributeNS(null, "cy", cresCrvCoords[tcoordsix].y.toString());
+      //rect
+      var temph = notationCanvasH - cresCrvCoords[tcoordsix].y;
+      cresCrvFollowersRect[i].setAttributeNS(null, "y", cresCrvCoords[tcoordsix].y.toString());
+      cresCrvFollowersRect[i].setAttributeNS(null, "height", temph.toString());
     }
   }
   // NOTATION //////////////////
@@ -480,6 +495,7 @@ function update(aMSPERFRAME) {
     for (var i = 0; i < pitchContainerDOMs.length; i++) {
       pitchContainerDOMs[i].appendChild(cresSvgCrvs[i]);
       pitchContainerDOMs[i].appendChild(cresCrvFollowers[i]);
+      pitchContainerDOMs[i].appendChild(cresCrvFollowersRect[i]);
     }
   }
 }
@@ -509,8 +525,6 @@ function mkEventMatrixSec1() {
       for (var k = 0; k < timeCodeByPart[i][j].length; k++) {
         var tTimeGopxGoFrm = [];
         var tTime = timeCodeByPart[i][j][k];
-        tTime = tTime + leadTime;
-        // tTime = tTime ;
         var tNumPxTilGo = tTime * PXPERSEC;
         var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
         var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -542,8 +556,6 @@ function mkEventMatrixSec2() {
     for (var j = 0; j < sec2TimeCodeByPart[i].length; j++) {
       var tTimeGopxGoFrm = [];
       var tTime = sec2TimeCodeByPart[i][j];
-      tTime = tTime + leadTime;
-      // tTime = tTime;
       var tNumPxTilGo = tTime * PXPERSEC;
       var tiGoPx = GOFRETPOSZ - tNumPxTilGo;
       var tGoFrm = Math.round(tNumPxTilGo / PXPERFRAME);
@@ -555,7 +567,7 @@ function mkEventMatrixSec2() {
       var tOffFrm = tGoFrm + teventdurframes;
       var tcresEventGeom = new THREE.CubeGeometry(50, GOFRETHEIGHT + 5, tcresEventLength);
       var tcresEventMesh = new THREE.Mesh(tcresEventGeom, tempMatl);
-      tcresEventMesh.position.z = tiGoPx;
+      tcresEventMesh.position.z = tiGoPx - (tcresEventLength / 2.0);
       tcresEventMesh.position.y = GOFRETHEIGHT;
       tcresEventMesh.position.x = -trackXoffset + (spaceBtwnTracks * i);
       tcresEventMesh.name = "cresEvent" + teventMeshIx;

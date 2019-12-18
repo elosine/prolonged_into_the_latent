@@ -7,7 +7,7 @@ var sectionsSecs = [];
 //Section 1: Hocket 17-24%
 var section1dur = PIECEDURSEC * rrand(0.33, 0.38);
 //Section 6: Short Hocket :13-:27
-var section5dur = rrand(13, 27);
+var section5dur = rrand(11, 17);
 //Section 2: Crescendos 37-39% of what is left
 var s2thru4 = PIECEDURSEC - section1dur - section5dur;
 var section2dur = s2thru4 * rrand(0.39, 0.43);
@@ -269,9 +269,9 @@ fetch('/pitchdata/sfAalysis003.txt')
       var ttimepartsarr = [];
       var ttimecode;
       if (i != 0) {
-        // ttimecode = leadTime + pitchChangeTimes[i];
-          ttimecode = pitchChangeTimes[i];
-      } else ttimecode = 0.0;
+        ttimecode = leadTime + pitchChangeTimes[i];
+        // ttimecode = pitchChangeTimes[i];
+      } else ttimecode = leadTime;
       ttimepartsarr.push(ttimecode);
       ttimepartsarr.push(Math.round(ttimecode * FRAMERATE));
       var tScaledTime = scale(pitchChangeTimes[i], 0.0, pitchChangeTimesMaxTime, 0.0, pitchesArrayMaxTime);
@@ -471,7 +471,6 @@ for (var i = 0; i < timeCodeByPart.length; i++) {
 }
 // Create sec2 timecode by parts
 var sec1sec2Gap = 3;
-// var sec2start = sec1LastEventTime + sec1sec2Gap + leadTime;
 var sec2start = sec1LastEventTime + sec1sec2Gap;
 var breath = 2.7;
 var cresMin = 5.9;
@@ -491,37 +490,104 @@ for (var i = 0; i < maxNumOfPlayers; i++) {
     }
   }
 }
+// SECTION 3: Hocket/Crescendos/Accel --------------------------------- //
+// Find end of section 2
+var sec2LastEventTime = 0;
+for (var i = 0; i < sec2TimeCodeByPart.length; i++) {
+  var tlastix = sec2TimeCodeByPart[i].length - 1;
+  var tlastval = sec2TimeCodeByPart[i][tlastix];
+  if (tlastval > sec2LastEventTime) {
+    sec2LastEventTime = tlastval;
+  }
+}
+var section2_3gap = 0.5;
+var sec3StartTime = sec2LastEventTime + cresMax + section2_3gap;
+var sec3EndTime = sec3StartTime + section3dur;
+// DIVIDE PLAYERS INTO 3 GROUPS
+var sec3Hocket = [];
+var sec3Cres = [];
+var sec3Accel = [];
+var playersScrambledSec3 = scrambleCount(16);
+var sec3Hocket = playersScrambledSec3.slice(0, 5);
+var sec3Cres = playersScrambledSec3.slice(5, 10);
+var sec3Accel = playersScrambledSec3.slice(10, 16);
+// Hocket
+var sec3HocketTimeCode = [];
+for (var i = 0; i < sec3Hocket.length; i++) {
+  //generate when tempi changes will take place
+  var tchgtimes = palindromeTimeContainers(section3dur, 1.8, 5.5, 0.03, 0.06);
+  var ttimecodePerTempo = [];
+  for (var j = 1; j < tchgtimes.length; j++) {
+    //Generate tempo for each change time
+    var ttempo = rrand(68, 105);
+    var tdur = tchgtimes[j] - tchgtimes[j - 1];
+    var tbeatdur = 60.0 / ttempo;
+    var tbeatsAtTempo = [];
+    //Generate as many beats as possible for each time container @ tempo
+    for (var k = 0; k < 100; k++) {
+      var titc = tbeatdur * k;
+      if (titc < (tdur - tbeatdur)) {
+        tbeatsAtTempo.push(tchgtimes[j - 1] + titc + sec3StartTime);
+      } else break;
+    }
+    ttimecodePerTempo.push(tbeatsAtTempo);
+  }
+  sec3HocketTimeCode.push(ttimecodePerTempo);
+}
+// Sec 3 Crescendos
+var sec3CresDurs = distributeOverRange(cresMin, cresMax, sec3Cres.length);
+var sec3CresTimeCodeByPart = [];
+for (var i = 0; i < sec3Cres.length; i++) {
+  var tempar = [];
+  sec3CresTimeCodeByPart.push(tempar);
+  for (var j = 0; j < 1000; j++) {
+    var tnextTimeCode = (sec3CresDurs[i] + breath) * j;
+    if (tnextTimeCode > sec3EndTime) {
+      break;
+    } else {
+      sec3CresTimeCodeByPart[i].push(tnextTimeCode);
+    }
+  }
+}
+// ACCEL
+var sec3AccelTimeCode = [];
+for (var i = 0; i < sec3Accel.length; i++) {
+  //generate when each accel begins
+  var tchgtimes = palindromeTimeContainers(section3dur, 19.2, 31.1, 0.03, 0.06);
+  var ttimecodePerAccel = [];
+  for (var j = 1; j < tchgtimes.length; j++) {
+    var titempo = 43.0;
+    var ttempo = titempo;
+    var taccelRate = rrand(1.052, 1.052);
+    var tmindur = 0.27;
+    var tdur = tchgtimes[j] - tchgtimes[j - 1];
+    var tibeatdur = 60.0 / titempo;
+    var tbeatdur = tibeatdur;
+    var tbeatsAtAccel = [];
+    //Generate as many beats as possible for each time container @ tempo
+    var titc = 0;
+    for (var k = 0; k < 100; k++) {
+      if (titc < (tdur - tibeatdur)) {
+        tbeatsAtAccel.push(tchgtimes[j - 1] + titc + sec3StartTime);
+        ttempo = ttempo * taccelRate;
+        tbeatdur = Math.max( tmindur, (60.0 / ttempo) );
+        console.log(j + ": " + tbeatdur);
+        titc = titc + tbeatdur;
+      } else break;
+    }
+    ttimecodePerAccel.push(tbeatsAtAccel);
+  }
+  sec3AccelTimeCode.push(ttimecodePerAccel);
+}
 
 
-//FIGURE OUT LEAD TIME
 
 
-
-
-
-// for (var i = 0; i < maxNumOfPlayers; i++) {
-//   var tempar = [];
-//   sec2TimeCodeByPart.push(tempar);
-// }
-// var endSec2Time = sec2start + section2dur;
-// console.log(sec2start + " " + endSec2Time);
-// for (var j = 0; j < 100; j++) {
-//   var tnextTimeCodeMax = 0;
-//   var tnextTimeCode = sec2start;
-//   for (var i = 0; i < maxNumOfPlayers; i++) {
-//     sec2TimeCodeByPart[i].push(tnextTimeCode);
-//     tnextTimeCode = sec2start + ((cresDurs[i] + breath) * j);
-//     if (tnextTimeCode > tnextTimeCodeMax) {
-//       tnextTimeCodeMax = tnextTimeCode;
-//     }
-//   }
-//   if (tnextTimeCodeMax > endSec2Time) {
-//     break;
-//   }
-// }
-
-
-
-
-
-///
+/*
+NOTES
+Fix
+Function to save sec2 on data
+sec2TimeCodeByPart
+sec3HocketTimeCode
+Sample Part Score
+*/
