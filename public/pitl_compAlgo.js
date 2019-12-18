@@ -1,21 +1,18 @@
 var leadTime = 8.0;
 
 //ca 10.6 - 13.2 min
-var PIECEDURSEC = rrand(10.6, 13.2) * 60;
+var PIECEDURSEC = rrand(8.2, 11.1) * 60;
 // 5 Sections: Hocket - Crescendos - Hocket/Crescendos/Accel - Hocket/Accel - Short Hocket :13-:27
 var sectionsSecs = [];
-//Section 1: Hocket 17-24%
-var section1dur = PIECEDURSEC * rrand(0.33, 0.38);
-//Section 6: Short Hocket :13-:27
-var section5dur = rrand(11, 17);
+//Section 1: Hocket 21-27%
+var section1dur = PIECEDURSEC * rrand(0.21, 0.27);
+//Section 6: Short Hocket :11-:17
+var section4dur = rrand(11, 17);
 //Section 2: Crescendos 37-39% of what is left
-var s2thru4 = PIECEDURSEC - section1dur - section5dur;
+var s2thru4 = PIECEDURSEC - section1dur - section4dur;
 var section2dur = s2thru4 * rrand(0.39, 0.43);
 //Section 3: Hocket/Crescendos/Accel 57-63% of what is left
-var s3_4 = s2thru4 - section2dur;
-var section3dur = s3_4 * rrand(0.57, 0.63);
-//Section 3: Accel & Hocket what remains
-var section4dur = s3_4 - section3dur;
+var section3dur = s2thru4 - section2dur;
 // SECTION 1 ------------------------------------------------------------- //
 //Section 1 Tempo Changes
 var sec1TempoChanges = palindromeTimeContainers(section1dur, 2.4, 9, 0.03, 0.06);
@@ -504,16 +501,16 @@ var section2_3gap = 0.5;
 var sec3StartTime = sec2LastEventTime + cresMax + section2_3gap;
 var sec3EndTime = sec3StartTime + section3dur;
 // DIVIDE PLAYERS INTO 3 GROUPS
-var sec3Hocket = [];
+var sec3HocketPlayers = [];
 var sec3Cres = [];
 var sec3Accel = [];
 var playersScrambledSec3 = scrambleCount(16);
-var sec3Hocket = playersScrambledSec3.slice(0, 5);
+var sec3HocketPlayers = playersScrambledSec3.slice(0, 5);
 var sec3Cres = playersScrambledSec3.slice(5, 10);
 var sec3Accel = playersScrambledSec3.slice(10, 16);
 // Hocket
 var sec3HocketTimeCode = [];
-for (var i = 0; i < sec3Hocket.length; i++) {
+for (var i = 0; i < sec3HocketPlayers.length; i++) {
   //generate when tempi changes will take place
   var tchgtimes = palindromeTimeContainers(section3dur, 1.8, 5.5, 0.03, 0.06);
   var ttimecodePerTempo = [];
@@ -570,8 +567,7 @@ for (var i = 0; i < sec3Accel.length; i++) {
       if (titc < (tdur - tibeatdur)) {
         tbeatsAtAccel.push(tchgtimes[j - 1] + titc + sec3StartTime);
         ttempo = ttempo * taccelRate;
-        tbeatdur = Math.max( tmindur, (60.0 / ttempo) );
-        console.log(j + ": " + tbeatdur);
+        tbeatdur = Math.max(tmindur, (60.0 / ttempo));
         titc = titc + tbeatdur;
       } else break;
     }
@@ -579,15 +575,30 @@ for (var i = 0; i < sec3Accel.length; i++) {
   }
   sec3AccelTimeCode.push(ttimecodePerAccel);
 }
-
-
-
-
+//SECTION 4 SHORT Hocket
+var sec4StartTime = sec3EndTime + cresMax;
+// Hocket
+var sec4TimeCode = [];
+for (var i = 0; i < maxNumOfPlayers; i++) {
+  var ttempo = rrand(68, 105);
+  var tbeatdur = 60.0 / ttempo;
+  var tbeatsAtTempo = [];
+  var titc = 0;
+  //Generate as many beats as possible for each time container @ tempo
+  for (var k = 0; k < 1000; k++) {
+    titc = tbeatdur * k;
+    if (titc < section4dur) {
+      tbeatsAtTempo.push(titc + sec4StartTime);
+    } else break;
+  }
+  sec4TimeCode.push(tbeatsAtTempo);
+}
 /*
 NOTES
-Fix
+Pitch Change Indicators
 Function to save sec2 on data
 sec2TimeCodeByPart
 sec3HocketTimeCode
+sec3AccelTimeCode
 Sample Part Score
 */
