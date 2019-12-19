@@ -73,6 +73,7 @@ var cresCrvFollowers = [];
 var cresCrvFollowersRect = [];
 var sec3eventMatrixHocket, sec3eventMatrixCres, sec3eventMatrixAccel, sec4eventMatrix;
 var sec2CresStart;
+var mainVoiceAmp = 0.25;
 // SET UP -------------------------------------------------------------- //
 function setup() {
   createScene();
@@ -119,7 +120,7 @@ function startPiece() {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    pieceClockAdjust(sec2start - 5);
+    pieceClockAdjust(sec2start - 25);
     getCresStartTimes();
     initAudio();
     requestAnimationFrame(animationEngine);
@@ -128,9 +129,15 @@ function startPiece() {
 //FUNCTION initAudio ------------------------------------------------------ //
 function initAudio() {
   actx = new(window.AudioContext || window.webkitAudioContext)();
+  for (var i=0;i<maxNumOfPlayers;i++){
+    var tgain = actx.createGain();
+    tgain.gain.setValueAtTime(mainVoiceAmp, actx.currentTime);
+    tgain.connect(actx.destination);
+    cresGainNodes.push(tgain);
+  }
 }
 //FUNCTION playsamp ------------------------------------------------------ //
-function playsamp(path, rate) {
+function playsamp(path, rate, gainix) {
   var source = actx.createBufferSource();
   var request = new XMLHttpRequest();
   request.open('GET', path, true);
@@ -138,7 +145,8 @@ function playsamp(path, rate) {
   request.onload = function() {
     actx.decodeAudioData(request.response, function(buffer) {
       source.buffer = buffer;
-      source.connect(actx.destination);
+      cresGainNodes[gainix].gain.setValueAtTime(mainVoiceAmp, actx.currentTime);
+      source.connect(cresGainNodes[gainix]);
       source.loop = false;
       source.playbackRate.value = rate;
       source.start();
@@ -412,9 +420,9 @@ function update(aMSPERFRAME) {
         var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
         var tspeed = midiToSpeed(troundMidi, tactMidi);
         if (i < 8) { //this is for male voices
-          playsamp(maleSamps[troundMidi.toString()], tspeed);
+          playsamp(maleSamps[troundMidi.toString()], tspeed, i);
         } else { //female voices
-          playsamp(femaleSamps[troundMidi.toString()], tspeed);
+          playsamp(femaleSamps[troundMidi.toString()], tspeed, i);
         }
       }
     }
@@ -438,20 +446,24 @@ function update(aMSPERFRAME) {
         goFretBlink[i] = framect + 9;
         crvFollowData[i][0] = true;
         crvFollowData[i][1] = scale(framect, sec2eventMatrix[i][j][2], sec2eventMatrix[i][j][6], 0.0, 1.0);
+      }
+      //// PLAY SAMPLES
+      if (framect == sec2eventMatrix[i][j][2]) {
         // Play Samples
-        // var tactMidi = currentPitches[i];
-        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
-        // var tspeed = midiToSpeed(troundMidi, tactMidi);
-        // if (i < 8) { //this is for male voices
-        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
-        // } else { //female voices
-        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
-        // }
+        var tactMidi = currentPitches[i];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (i < 8) { //this is for male voices
+          // playsamp(maleSamps[troundMidi.toString()], tspeed);
+        } else { //female voices
+          playsamp(femaleSampsLong[troundMidi.toString()], tspeed, i);
+        }
       }
       //end of event remove
       if (framect == sec2eventMatrix[i][j][6]) {
         crvFollowData[i][0] = false;
         scene.remove(scene.getObjectByName(sec2eventMatrix[i][j][1].name));
+        cresGainNodes[i].gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.5);
       }
     }
     //crv follow
@@ -915,53 +927,105 @@ function mkEventMatrixSec4() {
   return tEventMatrix;
 }
 // MORE VARIABLES ------------------------------------------------------ //
+var cresGainNodes = [];
 var maleSamps = {
-  45: '/samples/voices_m/45_A2_m.wav',
-  46: '/samples/voices_m/46_As2_m.wav',
-  47: '/samples/voices_m/47_B2_m.wav',
-  48: '/samples/voices_m/48_C3_m.wav',
-  49: '/samples/voices_m/49_Cs3_m.wav',
-  50: '/samples/voices_m/50_D3_m.wav',
-  51: '/samples/voices_m/51_Ds3_m.wav',
-  52: '/samples/voices_m/52_E3_m.wav',
-  53: '/samples/voices_m/53_F3_m.wav',
-  54: '/samples/voices_m/54_Fs3_m.wav',
-  55: '/samples/voices_m/55_G3_m.wav',
-  56: '/samples/voices_m/56_Gs3_m.wav',
-  57: '/samples/voices_m/57_A3_m.wav',
-  58: '/samples/voices_m/58_As3_m.wav',
-  59: '/samples/voices_m/59_B3_m.wav',
-  60: '/samples/voices_m/60_C4_m.wav',
-  61: '/samples/voices_m/61_Cs4_m.wav',
-  62: '/samples/voices_m/62_D4_m.wav',
-  63: '/samples/voices_m/63_Ds4_m.wav',
-  64: '/samples/voices_m/64_E4_m.wav'
+  45: '/samples/voice_samples_m/45.wav',
+  46: '/samples/voice_samples_m/46.wav',
+  47: '/samples/voice_samples_m/47.wav',
+  48: '/samples/voice_samples_m/48.wav',
+  49: '/samples/voice_samples_m/49.wav',
+  50: '/samples/voice_samples_m/50.wav',
+  51: '/samples/voice_samples_m/51.wav',
+  52: '/samples/voice_samples_m/52.wav',
+  53: '/samples/voice_samples_m/53.wav',
+  54: '/samples/voice_samples_m/54.wav',
+  55: '/samples/voice_samples_m/55.wav',
+  56: '/samples/voice_samples_m/56.wav',
+  57: '/samples/voice_samples_m/57.wav',
+  58: '/samples/voice_samples_m/58.wav',
+  59: '/samples/voice_samples_m/59.wav',
+  60: '/samples/voice_samples_m/60.wav',
+  61: '/samples/voice_samples_m/61.wav',
+  62: '/samples/voice_samples_m/62.wav',
+  63: '/samples/voice_samples_m/63.wav',
+  64: '/samples/voice_samples_m/64.wav'
 }
 
 var femaleSamps = {
-  57: '/samples/voices_f/57_A3_f.wav',
-  58: '/samples/voices_f/58_As3_f.wav',
-  59: '/samples/voices_f/59_B3_f.wav',
-  60: '/samples/voices_f/60_C3_f.wav',
-  61: '/samples/voices_f/61_Cs3_f.wav',
-  62: '/samples/voices_f/62_D3_f.wav',
-  63: '/samples/voices_f/63_Ds3_f.wav',
-  64: '/samples/voices_f/64_E4_f.wav',
-  65: '/samples/voices_f/65_F4_f.wav',
-  66: '/samples/voices_f/66_Fs4_f.wav',
-  67: '/samples/voices_f/67_G4_f.wav',
-  68: '/samples/voices_f/68_Gs4_f.wav',
-  69: '/samples/voices_f/69_A4_f.wav',
-  70: '/samples/voices_f/70_As4_f.wav',
-  71: '/samples/voices_f/71_B4_f.wav',
-  72: '/samples/voices_f/72_C5_f.wav',
-  73: '/samples/voices_f/73_Cs5_f.wav',
-  74: '/samples/voices_f/74_D5_f.wav',
-  75: '/samples/voices_f/75_Ds5_f.wav',
-  76: '/samples/voices_f/76_E5_f.wav',
-  77: '/samples/voices_f/77_F5_f.wav',
-  78: '/samples/voices_f/78_Fs5_f.wav',
-  79: '/samples/voices_f/79_G5_f.wav',
-  80: '/samples/voices_f/80_Gs5_f.wav',
-  81: '/samples/voices_f/81_A5_f.wav'
+  57: '/samples/voice_samples_f/57.wav',
+  58: '/samples/voice_samples_f/58.wav',
+  59: '/samples/voice_samples_f/59.wav',
+  60: '/samples/voice_samples_f/60.wav',
+  61: '/samples/voice_samples_f/61.wav',
+  62: '/samples/voice_samples_f/62.wav',
+  63: '/samples/voice_samples_f/63.wav',
+  64: '/samples/voice_samples_f/64.wav',
+  65: '/samples/voice_samples_f/65.wav',
+  66: '/samples/voice_samples_f/66.wav',
+  67: '/samples/voice_samples_f/67.wav',
+  68: '/samples/voice_samples_f/68.wav',
+  69: '/samples/voice_samples_f/69.wav',
+  70: '/samples/voice_samples_f/70.wav',
+  71: '/samples/voice_samples_f/71.wav',
+  72: '/samples/voice_samples_f/72.wav',
+  73: '/samples/voice_samples_f/73.wav',
+  74: '/samples/voice_samples_f/74.wav',
+  75: '/samples/voice_samples_f/75.wav',
+  76: '/samples/voice_samples_f/76.wav',
+  77: '/samples/voice_samples_f/77.wav',
+  78: '/samples/voice_samples_f/78.wav',
+  79: '/samples/voice_samples_f/79.wav',
+  80: '/samples/voice_samples_f/80.wav',
+  81: '/samples/voice_samples_f/81.wav'
+}
+
+var maleSampsLong = {
+  45: '/samples/voice_samples_long_m/45.wav',
+  46: '/samples/voice_samples_long_m/46.wav',
+  47: '/samples/voice_samples_long_m/47.wav',
+  48: '/samples/voice_samples_long_m/48.wav',
+  49: '/samples/voice_samples_long_m/49.wav',
+  50: '/samples/voice_samples_long_m/50.wav',
+  51: '/samples/voice_samples_long_m/51.wav',
+  52: '/samples/voice_samples_long_m/52.wav',
+  53: '/samples/voice_samples_long_m/53.wav',
+  54: '/samples/voice_samples_long_m/54.wav',
+  55: '/samples/voice_samples_long_m/55.wav',
+  56: '/samples/voice_samples_long_m/56.wav',
+  57: '/samples/voice_samples_long_m/57.wav',
+  58: '/samples/voice_samples_long_m/58.wav',
+  59: '/samples/voice_samples_long_m/59.wav',
+  60: '/samples/voice_samples_long_m/60.wav',
+  61: '/samples/voice_samples_long_m/61.wav',
+  62: '/samples/voice_samples_long_m/62.wav',
+  63: '/samples/voice_samples_long_m/63.wav',
+  64: '/samples/voice_samples_long_m/64.wav'
+}
+
+var femaleSampsLong = {
+  57: '/samples/voice_samples_long_f/57.wav',
+  58: '/samples/voice_samples_long_f/58.wav',
+  59: '/samples/voice_samples_long_f/59.wav',
+  60: '/samples/voice_samples_long_f/60.wav',
+  61: '/samples/voice_samples_long_f/61.wav',
+  62: '/samples/voice_samples_long_f/62.wav',
+  63: '/samples/voice_samples_long_f/63.wav',
+  64: '/samples/voice_samples_long_f/64.wav',
+  65: '/samples/voice_samples_long_f/65.wav',
+  66: '/samples/voice_samples_long_f/66.wav',
+  67: '/samples/voice_samples_long_f/67.wav',
+  68: '/samples/voice_samples_long_f/68.wav',
+  69: '/samples/voice_samples_long_f/69.wav',
+  70: '/samples/voice_samples_long_f/70.wav',
+  71: '/samples/voice_samples_long_f/71.wav',
+  72: '/samples/voice_samples_long_f/72.wav',
+  73: '/samples/voice_samples_long_f/73.wav',
+  74: '/samples/voice_samples_long_f/74.wav',
+  75: '/samples/voice_samples_long_f/75.wav',
+  76: '/samples/voice_samples_long_f/76.wav',
+  77: '/samples/voice_samples_long_f/77.wav',
+  78: '/samples/voice_samples_long_f/78.wav',
+  79: '/samples/voice_samples_long_f/79.wav',
+  80: '/samples/voice_samples_long_f/80.wav',
+  81: '/samples/voice_samples_long_f/81.wav'
 }
