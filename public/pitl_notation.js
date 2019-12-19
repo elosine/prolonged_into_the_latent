@@ -120,7 +120,7 @@ function startPiece() {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    pieceClockAdjust(sec2start - 25);
+    pieceClockAdjust(sec4StartTime - 3);
     getCresStartTimes();
     initAudio();
     requestAnimationFrame(animationEngine);
@@ -129,7 +129,7 @@ function startPiece() {
 //FUNCTION initAudio ------------------------------------------------------ //
 function initAudio() {
   actx = new(window.AudioContext || window.webkitAudioContext)();
-  for (var i=0;i<maxNumOfPlayers;i++){
+  for (var i = 0; i < maxNumOfPlayers; i++) {
     var tgain = actx.createGain();
     tgain.gain.setValueAtTime(mainVoiceAmp, actx.currentTime);
     tgain.connect(actx.destination);
@@ -454,7 +454,7 @@ function update(aMSPERFRAME) {
         var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
         var tspeed = midiToSpeed(troundMidi, tactMidi);
         if (i < 8) { //this is for male voices
-          // playsamp(maleSamps[troundMidi.toString()], tspeed);
+          playsamp(maleSampsLong[troundMidi.toString()], tspeed, i);
         } else { //female voices
           playsamp(femaleSampsLong[troundMidi.toString()], tspeed, i);
         }
@@ -498,14 +498,14 @@ function update(aMSPERFRAME) {
       if (framect == sec3eventMatrixHocket[i][j][2]) {
         goFretBlink[sec3HocketPlayers[i]] = framect + 9;
         scene.remove(scene.getObjectByName(sec3eventMatrixHocket[i][j][1].name));
-        // var tactMidi = currentPitches[i];
-        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
-        // var tspeed = midiToSpeed(troundMidi, tactMidi);
-        // if (i < 8) { //this is for male voices
-        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
-        // } else { //female voices
-        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
-        // }
+        var tactMidi = currentPitches[sec3HocketPlayers[i]];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (sec3HocketPlayers[i] < 8) { //this is for male voices
+          playsamp(maleSamps[troundMidi.toString()], tspeed, sec3HocketPlayers[i]);
+        } else { //female voices
+          playsamp(femaleSamps[troundMidi.toString()], tspeed, sec3HocketPlayers[i]);
+        }
       }
     }
   }
@@ -524,24 +524,27 @@ function update(aMSPERFRAME) {
         sec3eventMatrixCres[i][j][1].position.z += PXPERFRAME;
       }
       //When tf reaches goline, blink and remove
-      if (framect >= sec3eventMatrixCres[i][j][2] && framect < sec3eventMatrixCres[i][j][6]) {
+      if (framect >= Math.round(sec3eventMatrixCres[i][j][2]) && framect < Math.round(sec3eventMatrixCres[i][j][6])) {
         goFretBlink[sec3Cres[i]] = framect + 9;
         crvFollowData[sec3Cres[i]][0] = true;
         crvFollowData[sec3Cres[i]][1] = scale(framect, sec3eventMatrixCres[i][j][2], sec3eventMatrixCres[i][j][6], 0.0, 1.0);
+      }
+      if (framect == Math.round(sec3eventMatrixCres[i][j][2])) {
         // Play Samples
-        // var tactMidi = currentPitches[i];
-        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
-        // var tspeed = midiToSpeed(troundMidi, tactMidi);
-        // if (i < 8) { //this is for male voices
-        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
-        // } else { //female voices
-        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
-        // }
+        var tactMidi = currentPitches[sec3Cres[i]];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (sec3Cres[i] < 8) { //this is for male voices
+          playsamp(maleSampsLong[troundMidi.toString()], tspeed, sec3Cres[i]);
+        } else { //female voices
+          playsamp(femaleSampsLong[troundMidi.toString()], tspeed, sec3Cres[i]);
+        }
       }
       //end of event remove
       if (framect == sec3eventMatrixCres[i][j][6]) {
         crvFollowData[sec3Cres[i]][0] = false;
         scene.remove(scene.getObjectByName(sec3eventMatrixCres[i][j][1].name));
+        cresGainNodes[sec3Cres[i]].gain.linearRampToValueAtTime(0.0, actx.currentTime + 0.5);
       }
     }
     //crv follow
@@ -577,14 +580,14 @@ function update(aMSPERFRAME) {
       if (framect == sec3eventMatrixAccel[i][j][2]) {
         goFretBlink[sec3Accel[i]] = framect + 9;
         scene.remove(scene.getObjectByName(sec3eventMatrixAccel[i][j][1].name));
-        // var tactMidi = currentPitches[i];
-        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
-        // var tspeed = midiToSpeed(troundMidi, tactMidi);
-        // if (i < 8) { //this is for male voices
-        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
-        // } else { //female voices
-        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
-        // }
+        var tactMidi = currentPitches[sec3Accel[i]];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (sec3Accel[i] < 8) { //this is for male voices
+          playsamp(maleSamps[troundMidi.toString()], tspeed, sec3Accel[i]);
+        } else { //female voices
+          playsamp(femaleSamps[troundMidi.toString()], tspeed, sec3Accel[i]);
+        }
       }
     }
   }
@@ -607,14 +610,14 @@ function update(aMSPERFRAME) {
       if (framect == sec4eventMatrix[i][j][2]) {
         goFretBlink[i] = framect + 9;
         scene.remove(scene.getObjectByName(sec4eventMatrix[i][j][1].name));
-        // var tactMidi = currentPitches[i];
-        // var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
-        // var tspeed = midiToSpeed(troundMidi, tactMidi);
-        // if (i < 8) { //this is for male voices
-        //   playsamp(maleSamps[troundMidi.toString()], tspeed);
-        // } else { //female voices
-        //   playsamp(femaleSamps[troundMidi.toString()], tspeed);
-        // }
+        var tactMidi = currentPitches[i];
+        var troundMidi = limitRange(Math.round(tactMidi), 45, 81);
+        var tspeed = midiToSpeed(troundMidi, tactMidi);
+        if (i < 8) { //this is for male voices
+          playsamp(maleSamps[troundMidi.toString()], tspeed, i);
+        } else { //female voices
+          playsamp(femaleSamps[troundMidi.toString()], tspeed, i );
+        }
       }
     }
   }
