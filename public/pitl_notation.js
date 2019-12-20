@@ -120,7 +120,7 @@ function startPiece() {
     played = true;
     startButton.parentNode.removeChild(startButton);
     notes = loadInitialNotation();
-    pieceClockAdjust(sec4StartTime - 3);
+    // pieceClockAdjust(sec2start - 5);
     getCresStartTimes();
     initAudio();
     requestAnimationFrame(animationEngine);
@@ -616,7 +616,7 @@ function update(aMSPERFRAME) {
         if (i < 8) { //this is for male voices
           playsamp(maleSamps[troundMidi.toString()], tspeed, i);
         } else { //female voices
-          playsamp(femaleSamps[troundMidi.toString()], tspeed, i );
+          playsamp(femaleSamps[troundMidi.toString()], tspeed, i);
         }
       }
     }
@@ -693,6 +693,14 @@ function update(aMSPERFRAME) {
           pitchContainerDOMs[i].appendChild(cresCrvFollowersRect[i]);
         }
       }
+      //find pitch change before section 2
+      if (drwCrvFollowsec3) {
+        for (var i = 0; i < sec3Cres.length; i++) {
+          pitchContainerDOMs[sec3Cres[i]].appendChild(cresSvgCrvs[sec3Cres[i]]);
+          pitchContainerDOMs[sec3Cres[i]].appendChild(cresCrvFollowers[sec3Cres[i]]);
+          pitchContainerDOMs[sec3Cres[i]].appendChild(cresCrvFollowersRect[sec3Cres[i]]);
+        }
+      }
       break;
     }
   }
@@ -719,9 +727,29 @@ function update(aMSPERFRAME) {
     }
 
   }
+
+  //SECTION 3 CURVE FOLLOWERS
+  if (framect == (Math.round(sec3StartTime * FRAMERATE) + (leadTime * FRAMERATE))) {
+    drwCrvFollowsec3 = true;
+    for (var i = 0; i < sec3Cres.length; i++) {
+      pitchContainerDOMs[sec3Cres[i]].appendChild(cresSvgCrvs[sec3Cres[i]]);
+      pitchContainerDOMs[sec3Cres[i]].appendChild(cresCrvFollowers[sec3Cres[i]]);
+      pitchContainerDOMs[sec3Cres[i]].appendChild(cresCrvFollowersRect[sec3Cres[i]]);
+    }
+  }
+  //Remove at end of section 3
+  if (framect == (Math.round(sec3EndTime * FRAMERATE) + (leadTime * FRAMERATE))) {
+    drwCrvFollowsec3 = false;
+    for (var i = 0; i < sec3Cres.length; i++) {
+      document.getElementById(cresSvgCrvs[sec3Cres[i]].id).remove();
+      document.getElementById(cresCrvFollowers[sec3Cres[i]].id).remove();
+      document.getElementById(cresCrvFollowersRect[sec3Cres[i]].id).remove();
+    }
+  }
 }
 
 var drwCrvFollow = false;
+var drwCrvFollowsec3 = false;
 // DRAW ----------------------------------------------------------------- //
 function draw() {
   // // GO FRET BLINK TIMER ///////////////////////////////////
